@@ -314,3 +314,109 @@ npm run start
 - Vercel deployment of /edge
 - Public-repo flip on github.com/sgharlow/gemma-health
 - Draft Kaggle submission
+
+---
+
+## Day 6 — 2026-05-10 — Submission-ready: writeup + public artifacts + live deploy
+
+**Submission writeup:**
+- `WRITEUP.md` (~1,500 words) — Kaggle-ready narrative covering the 30-second pitch, the problem, the solution, why Gemma 4 specifically (5 properties), the three differentiators (Compliance Ledger / Defense-in-Depth Redaction / Sovereignty Mode), the architecture diagram, the live demo flow, what the submission deliberately does NOT claim, what's next, test coverage, acknowledgments.
+
+**Public-repo artifacts:**
+- `README.md` — public project face: pitch, three quick-start paths (full on-prem / in-browser live / stub mode), architecture overview, test instructions, "what this is NOT," license + acknowledgments.
+- `LICENSE` — Apache-2.0 (matches Gemma 4 license).
+- `assets/demo.vtt` — subtitle template aligned to the 90-second video script. Steve drops alongside the cut, adjusts timestamps.
+
+**Live deploy:**
+- Created Vercel project `gemma-health` (id `prj_cAhLTgjqzOxdm8GvZv6BguGcWFAp`) under team `steves-projects-a71becf4`, framework `nextjs`, rootDirectory `web`.
+- First production deploy succeeded (35 s build, 8 routes, 6 serverless functions + 2 static pages).
+- Live at **https://gemma-health.vercel.app** and **https://gemma-health.vercel.app/edge**.
+- `/api/health` returns `{ ollama: { ok: false, error: "fetch failed" }, ... }` as expected — Ollama isn't on Vercel.
+- The on-prem `/` page now shows a callout: *"This is the on-prem app — Ollama is not reachable here. For the in-browser live demo, open /edge."*
+
+**Tests + build still clean:** 49/49 vitest, tsc clean, build clean (8 routes, /edge static).
+
+**Day 6 DoD:**
+- [x] WRITEUP.md drafted
+- [x] README.md + LICENSE for public repo
+- [x] /edge callout on the on-prem home page when Ollama unreachable
+- [x] Vercel project created + deployed live
+- [x] Subtitle template
+
+---
+
+## Flip-public checklist for Steve (in this order)
+
+These three things you do yourself — they touch external services and need your auth.
+
+**1. Make the GitHub repo public** (one command, reversible):
+
+```bash
+cd C:/Users/sghar/CascadeProjects/gemma-health
+gh auth status                                  # confirm logged in
+gh repo create sgharlow/gemma-health --public --source=. --remote=origin --push
+# OR if it exists already as private:
+gh repo edit sgharlow/gemma-health --visibility public --accept-visibility-change-consequences
+git push -u origin main
+```
+
+**2. Verify everything still builds + Mac path works** (15 min on the Mac):
+
+```bash
+git pull
+cd web && npm install
+STUB_LLM_REDACTION=true npm run test            # expect 49/49
+brew services start ollama
+ollama pull gemma4:e4b && ollama pull gemma4:e2b
+unset STUB_VISION STUB_LLM_REDACTION
+npm run dev
+# exercise the demo end-to-end
+```
+
+**3. Verify the live demo on Chrome** (5 min):
+
+- Visit https://gemma-health.vercel.app/edge in Chrome
+- Click "Load Gemma 4 E2B" — wait ~2-5 min for the model
+- Pick DEMO-CAH-004 → "Run care-gap scan" → confirm Gemma streams a summary
+- DevTools → Network → Offline → run scan again → confirm it still works
+- Screenshot for the media gallery
+
+**4. Record the 90-second demo video** (Mac, ~30 min including retakes):
+
+Follow the shot list in `docs/STORY.md` (Marlene scenarios) and the BRIEF's video script. Two takes minimum. Drop `assets/demo.vtt` next to the final cut after adjusting timestamps.
+
+**5. Submit DRAFT writeup to Kaggle** (10 min):
+
+- Go to https://www.kaggle.com/competitions/gemma-4-good-hackathon
+- Click "New Writeup"
+- Paste the contents of `WRITEUP.md`
+- Attach the video URL (once uploaded to YouTube/Vimeo)
+- Attach the live demo URL: https://gemma-health.vercel.app/edge
+- Attach the public repo URL: https://github.com/sgharlow/gemma-health
+- Add a cover image to the Media Gallery (a screenshot from /edge with airplane mode toggled)
+- Save as draft (NOT submit yet)
+
+The draft just makes sure the form exists and we have somewhere to land final tweaks Day 7-8.
+
+---
+
+**Mac criticality from here on:**
+- Day 6 evening — recording + uploading the video
+- Day 7 — writeup polish based on Day 6 dry-run, optional re-record
+- Day 8 — final submit click
+
+**Day 7 plan (Windows-doable):**
+- Polish the writeup based on what reads well after a night of distance
+- Polish the live demo if Steve's Chrome test surfaced anything
+- Build a simple cover image for the Media Gallery (HTML/CSS screenshot or just a clean shot of /edge)
+- Add cover image to the Kaggle draft
+
+**Day 8 plan:**
+- Final pass through the whole submission
+- Submit before 11:59 UTC
+- Post-submit thread on LinkedIn (Steve)
+
+**Carried to Day 7:**
+- Writeup polish
+- Cover image for Media Gallery
+- Anything Steve flags from his Mac dry-run + Chrome test

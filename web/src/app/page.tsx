@@ -102,6 +102,27 @@ export default function Home() {
       </header>
 
       <main className="mx-auto flex max-w-4xl flex-col gap-8 px-6 py-10">
+        {health && !health.ollama.ok && (
+          <div className="rounded-lg border border-sky-200 bg-sky-50 p-4 text-sm dark:border-sky-900 dark:bg-sky-950">
+            <p className="font-semibold text-sky-900 dark:text-sky-200">
+              This is the on-prem app — Ollama is not reachable here.
+            </p>
+            <p className="mt-1 text-xs text-sky-800 dark:text-sky-300">
+              For the in-browser live demo (Gemma 4 running in WebGPU, no server needed), open{" "}
+              <a href="/edge" className="underline font-medium">
+                /edge
+              </a>
+              . To run the full on-prem app, follow{" "}
+              <a
+                href="https://github.com/sgharlow/gemma-health#path-a--full-on-prem-app-mac--linux-with-ollama"
+                className="underline font-medium"
+              >
+                Path A
+              </a>{" "}
+              in the README.
+            </p>
+          </div>
+        )}
         <section className="space-y-3 rounded-lg border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
           <h2 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">
             Ask the quality officer
