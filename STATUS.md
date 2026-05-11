@@ -214,3 +214,103 @@ npm run dev
 - In-browser tool layer + in-browser ledger
 - Demo UI polish
 - Demo video first recording
+
+---
+
+## Day 5 — 2026-05-10 — WebGPU live demo wired end-to-end
+
+**MediaPipe LLM Inference wired:**
+- `lib/edge-llm.ts` — `loadEdgeLlm(onProgress)` wires `@mediapipe/tasks-genai` to load Gemma 4 E2B from `litert-community/gemma-4-E2B-it-litert-lm` on Hugging Face. Lazy-imported (`await import(...)`) so it's not in the main bundle for non-`/edge` traffic. Streams tokens via the listener API. WebGPU adapter check up front. `NEXT_PUBLIC_EDGE_SIMULATED=true` returns a fake LLM so we can preview without the 1.8 GB download.
+- `NEXT_PUBLIC_GEMMA_EDGE_MODEL_URL` is overridable so Steve can swap if the canonical URL turns out to be different.
+
+**In-browser tool layer:**
+- `lib/edge-data.ts` — fetches `/edge/{facilities,quality,readmissions}.json` once and caches.
+- `lib/tools-edge.ts` — all 6 MCP tools ported to read JSON instead of DuckDB. Tool *definitions* are inlined here (not imported from `lib/tools/*`) so the module does not transitively bundle DuckDB into the browser.
+- Same tool contracts (judge sees identical function-calling surface) but `data_source: "edge_browser_seed"` so the source is honest.
+
+**In-browser compliance ledger:**
+- `lib/ledger-browser.ts` — `BrowserLedger` class with same `append/read/count/headHash` API as the server `Ledger`. IndexedDB-backed, SHA-256 chained via `crypto.subtle`, `verifyBrowserChain` for tamper detection. Same security properties as the server ledger; different storage substrate.
+
+**`/edge` page rebuilt to a complete in-browser demo:**
+- Step 1: Load Gemma 4 E2B (real MediaPipe call; simulated path available via env).
+- Step 2: Pick a facility + run care-gap scan. `care_gap_finder` runs in-browser → ledger entry → result fed into Gemma → token-streamed executive summary → ledger entry.
+- Compliance Ledger panel shows IndexedDB entries live, with hash prefixes + action badges + `phi_egress: false` everywhere.
+- Footer credits + GitHub link.
+- "Toggle DevTools network to offline" instruction is the airplane-mode banner.
+
+**UI polish on the on-prem page:**
+- Wrapped chat surface in a card matching the rest of the layout.
+- Footer credits.
+- Tightened spacing (gap-6 → gap-8, py-8 → py-10) so each section breathes.
+
+**Tests:** 49/49 vitest green (no new tests today — `/edge` is browser-only and IndexedDB needs jsdom polyfill which we'll add Day 7 if needed). TypeScript clean. `npm run build` clean — 8 routes total (`/`, `/edge`, 6 API routes), `/edge` is static.
+
+**Day 5 DoD:**
+- [x] Real MediaPipe LLM Inference wired (`@mediapipe/tasks-genai` + Gemma 4 E2B URL + WebGPU check + streaming)
+- [x] Browser tool layer (6 tools) reading static JSON
+- [x] IndexedDB ledger with SHA-256 chain
+- [x] `/edge` page wired end-to-end (load → scan → stream → ledger)
+- [x] UI polish on on-prem page
+- [x] All tests green, build clean
+
+**Mac Mini CRITICAL work tomorrow morning:**
+
+Two parallel paths.
+
+**Path A — verify the Mac Mini app (15 min):**
+```bash
+git pull
+cd web && npm install
+STUB_LLM_REDACTION=true npm run test     # expect 49/49
+brew services start ollama
+ollama pull gemma4:e4b && ollama pull gemma4:e2b
+unset STUB_VISION
+unset STUB_LLM_REDACTION
+npm run dev
+# Test chat → tool call → ledger; egress with sovereignty toggle; webcam capture
+```
+
+**Path B — verify the WebGPU demo on macOS (~30 min):**
+```bash
+# Same checkout, no env changes
+npm run build
+npm run start
+# In Chrome (must be Chrome — Safari WebGPU shipped behind a flag, may or may not work):
+# 1. Open http://localhost:3000/edge
+# 2. Confirm "WebGPU: available"
+# 3. Click "Load Gemma 4 E2B" — first load is ~1.8 GB, ~2-5 minutes on broadband
+# 4. Pick DEMO-CAH-004 → "Run care-gap scan"
+# 5. Watch Gemma stream a 2-sentence summary in your browser
+# 6. Open DevTools → Network tab → throttling: Offline
+# 7. Click "Run care-gap scan" again — IT STILL WORKS
+# 8. Screenshot/screen-record this.
+
+# If MediaPipe + Gemma 4 fails to load:
+# - First check the model URL is reachable (it's Hugging Face public)
+# - Fallback: NEXT_PUBLIC_EDGE_SIMULATED=true to verify the rest of the UX
+# - Then tell me the exact error and I patch within an hour
+```
+
+**Day 5 evening — first demo recording:**
+- Mac Mini app demo (Marlene scenario): chat → tool call → webcam capture → egress with sovereignty toggle → ledger view filling up in real time
+- WebGPU live demo (judge experience): /edge page, model load, run scan, toggle offline, scan again
+- Two takes minimum, no music yet (Day 6)
+
+**Day 6 plan:**
+- Re-record demo if Day 5 take is muddy
+- Add subtitles + light music to video
+- Writeup draft (use STORY.md as raw material)
+- Deploy `/edge` static export to Vercel
+- Open repo to public
+- Submit DRAFT writeup to Kaggle (so the form exists, edits land later)
+
+**Mac criticality from here on:**
+- Day 5 evening — recording (irreversible)
+- Day 6 — recording polish, browser verification
+
+**Carried to Day 6:**
+- Final demo recording + edit
+- Writeup draft + polish
+- Vercel deployment of /edge
+- Public-repo flip on github.com/sgharlow/gemma-health
+- Draft Kaggle submission

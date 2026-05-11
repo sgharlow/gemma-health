@@ -101,9 +101,11 @@ export default function Home() {
         </div>
       </header>
 
-      <main className="mx-auto flex max-w-4xl flex-col gap-6 px-6 py-8">
-        <section className="space-y-3">
-          <h2 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Ask the quality officer</h2>
+      <main className="mx-auto flex max-w-4xl flex-col gap-8 px-6 py-10">
+        <section className="space-y-3 rounded-lg border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+          <h2 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+            Ask the quality officer
+          </h2>
           {messages.length === 0 && (
             <div className="rounded-lg border border-dashed border-zinc-300 p-4 text-xs text-zinc-500 dark:border-zinc-700">
               <p className="mb-2 font-medium text-zinc-700 dark:text-zinc-300">Try:</p>
@@ -159,6 +161,14 @@ export default function Home() {
         <EgressButton sovereigntyEnabled={sovereigntyEnabled} onSubmit={() => setLedgerTick((t) => t + 1)} />
 
         <LedgerView refreshSignal={ledgerTick} />
+
+        <footer className="pt-4 text-center text-[11px] text-zinc-500">
+          HealthPulse Edge · runs entirely on this machine ·{" "}
+          <a href="https://github.com/sgharlow/gemma-health" className="underline">
+            github.com/sgharlow/gemma-health
+          </a>{" "}
+          · synthetic CAH data
+        </footer>
       </main>
     </div>
   );
