@@ -2,45 +2,69 @@
 
 ## Day 1 — 2026-05-10 — Scaffold + skeleton end-to-end loop
 
-**Decisions locked (per Steve):**
-- Hardware: Mac Mini available
-- IDSov framing: keep
-- Public repo timing: Day 5
-- Code reuse: self-contained repo + credit Health Pulse
+**Decisions locked:** Mac Mini target / IDSov framing / Day-5 public repo / self-contained code reuse.
 
-**Shipped:**
-- Next.js 16 + TS + Tailwind 4 + App Router scaffold (`web/`)
-- `lib/ollama.ts` — typed client for Ollama `/api/chat` with function-calling support, `/api/version` ping
-- `lib/ledger.ts` — append-only JSONL Compliance Ledger with SHA-256 hash chain, tamper detection
-- `lib/__tests__/ledger.test.ts` — vitest suite covering chain integrity, persistence, tamper detection, missing-entry detection
-- `lib/tools/facility-benchmark.ts` — first MCP tool stubbed with seed CMS data (replaces with real DuckDB on Day 2)
-- `lib/tools/index.ts` — tool registry
-- `app/api/chat/route.ts` — chat endpoint with full tool-calling loop (max 4 hops); writes ledger entries for each user turn, tool call, and assistant turn
-- `app/api/health/route.ts` — Ollama liveness + model + host
-- `app/page.tsx` — minimal chat UI with airplane-mode banner (offline = green, online = amber), example prompts, ledger footer
-- `docs/MODELS.md` — Gemma 4 variant selection + Mac Mini bootstrap instructions
-- `vitest.config.ts` + test script
+**Shipped:** Next.js 16 + TS + Tailwind 4 scaffold; `lib/ollama.ts` (typed Ollama client + tool-calling); `lib/ledger.ts` (SHA-256 hash-chain Compliance Ledger); 8 vitest cases for ledger; first MCP tool stub (seed data); `/api/chat` tool-calling loop (max 4 hops); `/api/health` Ollama probe; minimal chat UI with airplane-mode banner; `docs/MODELS.md` Gemma variant decisions; `STATUS.md` initial entry.
 
-**Steve's parallel work (on Mac Mini):**
-- `brew install ollama && brew services start ollama`
-- `ollama pull gemma4:e4b` and `ollama pull gemma4:e2b`
-- `cd web && npm install`
-- `npm run dev` → open http://localhost:3000 → ask the example prompt → verify response cites the tool
+**Mac-blocked at Day 1:** end-to-end test against real Gemma 4. Carried forward.
 
-**Day 1 DoD:**
-- [ ] Ollama pulls Gemma 4 successfully (Steve verifies)
-- [x] `web/` scaffold complete
-- [x] `/api/health` returns Ollama version
-- [x] `/api/chat` calls model + executes one tool round-trip (logic-complete; live-test on Mac Mini)
-- [x] Compliance Ledger writes hash-chained JSONL (tested)
-- [x] Mock UI page renders with airplane-mode banner
+---
 
-**Known risks surfaced today:**
-- Gemma 4 Ollama tag name not verified — `MODELS.md` has fallback instructions
-- `data/ledger/` is gitignored — judge cannot inspect ledger, only see test output proving the chain works. Day 6 video should demo the ledger view in-app.
-- Tool calling behavior depends on Gemma 4 supporting OpenAI-style `tools` array via Ollama — may need to swap to a prompt-based ReAct loop if not. Validate on Day 1 evening.
+## Day 2 — 2026-05-10 — Real data + tool surface + live-demo decision
 
-**Carried to Day 2:**
-- Replace seed data in `facility_benchmark` with real CMS query against local DuckDB
-- Port 5+ more MCP tools from Health Pulse (`quality_monitor`, `care_gap_finder`, `equity_detector`, `state_ranking`, `cross_cutting_analysis`)
-- Decide live-demo path (WebGPU vs hosted vs disk image)
+**Verified Day 1 on Windows:** `npm install` clean; fixed one `stableStringify` bug that included `undefined` keys (verifyChain was failing). 8/8 ledger tests now green; one TS cast in tool registry tightened.
+
+**Net new code shipped:**
+- `data/seed/{facilities,quality,readmissions}.json` — 15 synthetic CAHs across CMS Regions 6/8/9/10, including 5 explicitly tribal facilities. ~80 quality measures + ~25 readmission DRG rows. Marked `data_source: demo_seed` in every tool result.
+- `web/src/lib/db.ts` — DuckDB singleton; lazy bootstraps `data/cms/hospital.duckdb` from JSON seed on first query
+- `web/scripts/smoke-db.ts` — verified DuckDB ingest + query end-to-end on Windows
+- `web/src/lib/tools/facility-benchmark.ts` — replaced seed stub with real DuckDB query; computes peer median / P25 / P75 / percentile rank within CMS region; pulls top 3 contributing DRGs for readmission metrics
+- `web/src/lib/tools/quality-monitor.ts` — all measures for a facility, sorted "worse" → "no different" → "better"
+- `web/src/lib/tools/care-gap-finder.ts` — flags worse-than-national measures + excess-readmission DRGs, with a one-sentence intervention hint per gap (HF discharge bundle, sepsis bundle, etc.)
+- `web/src/lib/tools/equity-detector.ts` — **the IDSov-aligned tool** — compares tribal vs non-tribal CAH cohorts on any measure, flags meaningful equity gaps
+- `web/src/lib/tools/state-ranking.ts` — rank states by mean CAH score on a measure
+- `web/src/lib/tools/cross-cutting-analysis.ts` — Pearson correlation between two measures across all CAHs
+- `web/src/lib/__tests__/tools.test.ts` — 9 vitest cases covering every tool against the seed data
+- `web/src/lib/tools/index.ts` — registry now exports 6 tools (was 1)
+- `docs/LIVE-DEMO.md` — locked Option 1 (WebGPU in judge's browser); full architecture + risk/fallback table
+
+**Test totals:** 17 vitest cases, all green. TypeScript clean (`tsc --noEmit` exit 0).
+
+**Live-demo decision (locked):** Public WebGPU demo running Gemma 4 in judge's browser. No server. Judge proves offline by toggling DevTools network panel. Build deadline EOD Day 6. Fallback: hosted Cloudflare Worker proxy.
+
+**Day 2 DoD:**
+- [x] DuckDB integration end-to-end (Windows-verified)
+- [x] `facility_benchmark` queries real data
+- [x] 5 additional tools ported (6 total)
+- [x] Live-demo path locked + documented
+- [x] All tests green; TypeScript clean
+
+**Mac Mini work for tomorrow (when hardware is set up):**
+
+1. Pull repo on Mac Mini
+2. `cd web && npm install` (DuckDB binary will install for darwin-arm64)
+3. `brew install ollama && brew services start ollama`
+4. `ollama pull gemma4:e4b` and `ollama pull gemma4:e2b`
+5. `npm run test` → expect 17/17
+6. `npm run dev` → http://localhost:3000
+7. Hit `/api/health` → expect `{ ollama: { ok: true, ... } }`
+8. Ask: *"For DEMO-CAH-004, find the top 3 care gaps and tell me which one to tackle first."*
+9. Expected: model calls `care_gap_finder`, then potentially `facility_benchmark` for context, replies citing tools + DRGs
+
+If the tool-calling protocol Gemma 4 expects via Ollama doesn't match the OpenAI-style `tools` array (single most likely failure mode), I'll patch within an hour — fallback is a prompt-based ReAct loop using the same tool registry.
+
+**What I can keep building on Windows tomorrow without the Mac:**
+- Day 3: multimodal webcam handler + redaction sub-agent scaffold (UI + API; can't end-to-end test against Gemma vision until Mac Mini)
+- Day 3: differential-privacy aggregator (pure math, no model needed)
+- Day 4: sovereignty-mode policy engine (config + UI; no model needed)
+
+**Mac Mini becomes critical at:**
+- End of Day 3 (verify multimodal vision actually works with `gemma4:e4b` vision endpoint)
+- Day 5 (record the demo video — must happen on the Mac)
+- Day 6 (live-demo WebGPU build — can develop on Windows but verify on macOS Safari + Chrome)
+
+**Carried to Day 3:**
+- Multimodal handler (webcam capture → Gemma vision → structured FHIR)
+- Redaction sub-agent (Gemma E2B sidecar that strips PHI before any optional sync)
+- Differential privacy aggregator (Laplace mechanism, ε=1.0)
+- Compliance ledger view in the UI (so the demo can show the chain in real time)

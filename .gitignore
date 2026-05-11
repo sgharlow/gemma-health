@@ -25,9 +25,11 @@ models/
 *.bin
 *.pt
 
-# Local data caches — large
+# Local data caches — large or generated
 data/cms/raw/
 data/cms/parquet/
+data/cms/*.duckdb
+data/cms/*.duckdb.wal
 data/synthea/output/
 data/ledger/*.jsonl
 
