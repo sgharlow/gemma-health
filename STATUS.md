@@ -488,3 +488,98 @@ git add assets/cover.png && git commit -m "Day 8: cover image snapshot"
 - Cover image snapshot from /cover route (Mac, 30 sec)
 - Final write-up review for typos
 - Final-submit click on Kaggle
+
+---
+
+## Day 8 — 2026-05-10 — Submission-ready, awaiting recording + click
+
+**Final WRITEUP polish:**
+- Two surgical tweaks: "one overworked nurse-administrator" → "a single overworked nurse-administrator"; "swapped in/out between chat sessions" → "run on demand for nightly reports".
+- Word count re-verified: **1,484 prose-words / 1,500 raw** — under contest 1,500 cap.
+
+**Supporting screenshots for Media Gallery:**
+- `assets/screenshot-onprem-home.png` (1280×900 @ 2x): on-prem `/` page showing the sky callout that points visitors to `/edge`. Verifies the Vercel deploy is honest about what's reachable here.
+- `assets/screenshot-edge.png` (1280×900 @ 2x): `/edge` page with WebGPU detection + facility dropdown loaded. The live-demo proof point.
+- `assets/screenshot-sovereignty-block.png` (1280×900 @ 2x): **the money shot** — Sovereignty Mode REQUIRES SIGNATURE card showing the policy engine refusing CMS egress without a tribal council co-signature key. Captured live from production.
+- `assets/cover.png` already exists from Day 7 (1200×630 @ 2x).
+
+**Pre-submit verification script:**
+- `scripts/verify-submission.cjs` — single command that runs 5 checks: word count, required files exist, no leftover placeholders in WRITEUP, all live URLs return 200, vitest passes. Exits 1 if any FAIL.
+- Current run: 4/5 PASS; the 1 FAIL is the intentional YouTube URL placeholder which Steve replaces after recording.
+
+**Day 8 DoD (everything I can do on Windows):**
+- [x] Final WRITEUP readthrough + typo pass; word count re-verified
+- [x] 3 supporting screenshots generated from production
+- [x] Pre-submit verification script that catches common pre-submit mistakes
+- [x] All previous tests still green (51/51)
+
+---
+
+## What's left for Steve (the irreversible Day 8 work)
+
+In order:
+
+```bash
+# 1. Mac sweep — verify everything works locally one more time
+git pull
+cd web && npm install
+STUB_LLM_REDACTION=true npm run test     # 51/51
+brew services start ollama
+ollama pull gemma4:e4b && ollama pull gemma4:e2b
+unset STUB_VISION STUB_LLM_REDACTION
+npm run dev
+# Exercise the demo: chat → tool call → webcam capture → egress with sovereignty
+# toggle. If anything looks wrong, ping me — there's still time to patch.
+
+# 2. Record the demo video
+# Follow docs/STORY.md shot list. Target 2:30, contest cap 3:00.
+# Two takes minimum. Drop assets/demo.vtt next to the cut after adjusting.
+
+# 3. Upload to YouTube
+# MUST be YouTube (contest hard rule, not Vimeo).
+# Public visibility, no age restriction. Get the share URL.
+
+# 4. Update WRITEUP.md with the YouTube URL
+# Line 10: replace "_replace with YouTube link_" with the actual URL.
+
+# 5. Run the verification script — must show 0 failures now
+cd C:/Users/sghar/CascadeProjects/gemma-health
+node scripts/verify-submission.cjs
+
+# 6. Commit + push
+git add -A && git commit -m "Day 8: final YouTube URL"
+git push
+
+# 7. Make the GitHub repo public
+gh repo edit sgharlow/gemma-health --visibility public --accept-visibility-change-consequences
+# OR if not yet created on GitHub:
+gh repo create sgharlow/gemma-health --public --source=. --remote=origin --push
+
+# 8. Final-submit on Kaggle
+# Follow docs/SUBMIT-CHECKLIST.md exactly:
+# - Open https://www.kaggle.com/competitions/gemma-4-good-hackathon
+# - New Writeup → paste WRITEUP.md
+# - Track: Digital Equity & Inclusivity
+# - Special Tech Track: Ollama
+# - Attachments: video URL, https://gemma-health.vercel.app/edge,
+#   https://github.com/sgharlow/gemma-health
+# - Media Gallery: assets/cover.png as cover, plus the 3 supporting screenshots
+# - Click Submit (NOT Save) before 2026-05-18 11:59 PM UTC
+```
+
+## Final state at end of Day 8 (Windows side)
+
+| | |
+|---|---|
+| Commits on `main` | 11 |
+| Vercel deploy | Production · `https://gemma-health.vercel.app` (verified) |
+| Tests | **51/51 vitest** + tsc clean + build clean (9 routes) |
+| WRITEUP word count | **1,484 / 1,500** ✓ |
+| Submission docs | `WRITEUP.md` · `README.md` · `LICENSE` · `NOTICE` · `BRIEF.md` · `docs/STORY.md` · `docs/SUBMIT-CHECKLIST.md` · `STATUS.md` |
+| Media Gallery assets | 1 cover + 3 supporting screenshots |
+| Verification script | `node scripts/verify-submission.cjs` (4/5 PASS, 1 intentional placeholder) |
+| Track selections decided | Digital Equity & Inclusivity (writeup) + Ollama (Special Tech) |
+| Realistic prize ceiling | $70k (Main 1st $50k + Impact $10k + Special Tech Ollama $10k) |
+| What's blocking Steve | YouTube recording + final-submit click |
+
+**This is as far as I can take the submission without Steve's hands on the Mac and on the Kaggle submit button. Ship it.**

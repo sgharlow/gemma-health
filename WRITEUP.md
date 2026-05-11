@@ -18,7 +18,7 @@
 
 A 25-bed hospital on tribal land has the same federal CMS reporting obligations as Mayo Clinic, but no IT team, intermittent connectivity, and a tribal-council policy that forbids patient data leaving the reservation.
 
-**HealthPulse Edge** is a $400 mini-PC running Gemma 4 entirely on-device via Ollama. It turns one overworked nurse-administrator into a one-person quality intelligence team — care gaps, peer benchmarks, CMS submissions, handwritten survey OCR — and *never sends a byte of patient data anywhere*.
+**HealthPulse Edge** is a $400 mini-PC running Gemma 4 entirely on-device via Ollama. It turns a single overworked nurse-administrator into a one-person quality intelligence team — care gaps, peer benchmarks, CMS submissions, handwritten survey OCR — and *never sends a byte of patient data anywhere*.
 
 Not "doctor in your pocket." This is **closing the analytics equity gap** between resourced urban systems and the 1,350 Critical Access Hospitals serving rural and tribal America — without compromising patient sovereignty.
 
@@ -96,7 +96,7 @@ The on-prem product runs entirely on Ollama. We chose Ollama (not a custom infer
 
 - **Primary chat + function calling** via `gemma4:e4b`, served at `http://localhost:11434`.
 - **Sidecar redaction sub-agent** via a separate `gemma4:e2b` invocation. Two models, one runtime, no orchestration code.
-- **Optional batch quality analysis** via `gemma4:26b` on machines with sufficient RAM, swapped in/out between chat sessions.
+- **Optional batch quality analysis** via `gemma4:26b` on machines with sufficient RAM, run on demand for nightly reports.
 
 Our minimal `lib/ollama.ts` adapter is ~60 lines of TypeScript. No vendor lock-in. The architecture transfers verbatim to any hospital with a $400 box.
 
