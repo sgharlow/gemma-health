@@ -1,0 +1,39 @@
+node_modules/
+.next/
+out/
+dist/
+build/
+.env
+.env.local
+.env*.local
+*.log
+.DS_Store
+.vercel
+.turbo
+coverage/
+.pytest_cache/
+__pycache__/
+*.pyc
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# Local model weights — never commit
+models/
+*.gguf
+*.safetensors
+*.bin
+*.pt
+
+# Local data caches — large
+data/cms/raw/
+data/cms/parquet/
+data/synthea/output/
+data/ledger/*.jsonl
+
+# IDE
+.idea/
+.vscode/
+
+# Submission scratch
+.scratch/
