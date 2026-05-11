@@ -1,5 +1,5 @@
 import { hashJson, sha256 } from "./ledger";
-import { redactObject } from "./redaction";
+import { deepRedactObject, deepRedactText } from "./redaction-llm";
 import { aggregateMeasure, type DpAggregate } from "./dp";
 
 export interface EgressInput {
@@ -15,7 +15,11 @@ export interface SignedEnvelope {
   destination: string;
   reporting_period: string;
   facility_id: string;
-  redaction_summary: { total_redactions: number; classes_found: string[] };
+  redaction_summary: {
+    total_redactions: number;
+    classes_found: string[];
+    llm_spans_found: number;
+  };
   dp_aggregates: DpAggregate[];
   free_text_summaries_redacted: string[];
   patient_records_count: number;
@@ -27,26 +31,30 @@ export interface SignedEnvelope {
 
 const EPSILON_PER_AGGREGATE = 1.0;
 
-export function buildEgressEnvelope(input: EgressInput): SignedEnvelope {
+export async function buildEgressEnvelope(input: EgressInput): Promise<SignedEnvelope> {
   const dp_aggregates = (input.numeric_measures ?? []).map((m) =>
     aggregateMeasure(m.measure_id, m.values, m.range, { epsilon: EPSILON_PER_AGGREGATE }),
   );
 
   let totalRedactions = 0;
+  let llmSpans = 0;
   const classes = new Set<string>();
+
   if (input.patient_records) {
     for (const r of input.patient_records) {
-      const redacted = redactObject(r);
+      const redacted = await deepRedactObject(r);
       totalRedactions += redacted.total_redactions;
+      llmSpans += redacted.llm_spans_found;
       redacted.classes_found.forEach((c) => classes.add(c));
     }
   }
 
   const free_text_summaries_redacted: string[] = [];
   for (const s of input.free_text_summaries ?? []) {
-    const r = redactObject({ s });
-    free_text_summaries_redacted.push((r.redacted as { s: string }).s);
+    const r = await deepRedactText(s);
+    free_text_summaries_redacted.push(r.redacted);
     totalRedactions += r.total_redactions;
+    llmSpans += r.llm_spans_found;
     r.classes_found.forEach((c) => classes.add(c));
   }
 
@@ -54,7 +62,11 @@ export function buildEgressEnvelope(input: EgressInput): SignedEnvelope {
     destination: input.destination,
     reporting_period: input.reporting_period,
     facility_id: input.facility_id,
-    redaction_summary: { total_redactions: totalRedactions, classes_found: Array.from(classes) },
+    redaction_summary: {
+      total_redactions: totalRedactions,
+      classes_found: Array.from(classes),
+      llm_spans_found: llmSpans,
+    },
     dp_aggregates,
     free_text_summaries_redacted,
     patient_records_count: input.patient_records?.length ?? 0,
@@ -70,6 +82,6 @@ export function buildEgressEnvelope(input: EgressInput): SignedEnvelope {
       total_epsilon_spent: dp_aggregates.length * EPSILON_PER_AGGREGATE,
     },
     notes:
-      "Built locally. PHI redacted via regex (Day 3) — Gemma E2B sub-agent verifies on Day 4. DP applied via Laplace mechanism on each numeric aggregate independently.",
+      "Built locally. Defense-in-depth redaction: regex floor + Gemma E2B sub-agent for semantic spans. DP via Laplace mechanism per aggregate.",
   };
 }

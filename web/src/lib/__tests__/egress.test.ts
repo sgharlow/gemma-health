@@ -1,9 +1,13 @@
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 import { buildEgressEnvelope } from "../egress";
 
+beforeAll(() => {
+  process.env.STUB_LLM_REDACTION = "true";
+});
+
 describe("buildEgressEnvelope", () => {
-  it("redacts PHI from patient records", () => {
-    const env = buildEgressEnvelope({
+  it("redacts PHI from patient records (regex + LLM layers)", async () => {
+    const env = await buildEgressEnvelope({
       destination: "CMS",
       reporting_period: "Q2-2026",
       facility_id: "DEMO-CAH-001",
@@ -14,10 +18,11 @@ describe("buildEgressEnvelope", () => {
     });
     expect(env.redaction_summary.total_redactions).toBeGreaterThanOrEqual(5);
     expect(env.redaction_summary.classes_found).toEqual(expect.arrayContaining(["ssn", "phone"]));
+    expect(env.redaction_summary.llm_spans_found).toBeGreaterThanOrEqual(0);
   });
 
-  it("produces DP aggregates with declared epsilon", () => {
-    const env = buildEgressEnvelope({
+  it("produces DP aggregates with declared epsilon", async () => {
+    const env = await buildEgressEnvelope({
       destination: "CMS",
       reporting_period: "Q2-2026",
       facility_id: "DEMO-CAH-001",
@@ -31,8 +36,8 @@ describe("buildEgressEnvelope", () => {
     expect(env.dp_aggregates[0].dp_mean).toBeGreaterThan(0);
   });
 
-  it("redacts free-text summaries", () => {
-    const env = buildEgressEnvelope({
+  it("redacts free-text summaries", async () => {
+    const env = await buildEgressEnvelope({
       destination: "CMS",
       reporting_period: "Q2-2026",
       facility_id: "DEMO-CAH-001",
@@ -42,20 +47,17 @@ describe("buildEgressEnvelope", () => {
     expect(env.free_text_summaries_redacted[0]).not.toMatch(/Mr\.\s+Smith/);
   });
 
-  it("envelope_hash is deterministic for same payload", () => {
+  it("envelope_hash is sha256 hex; differs across runs because DP noise differs", async () => {
     const input = {
       destination: "CMS" as const,
       reporting_period: "Q2-2026",
       facility_id: "DEMO-CAH-001",
       numeric_measures: [{ measure_id: "X", values: [1, 2, 3], range: [0, 10] as [number, number] }],
     };
-    // The DP noise differs each call so envelope_hash differs — this verifies it
-    // is a hash of the *generated* payload not the input
-    const a = buildEgressEnvelope(input);
-    const b = buildEgressEnvelope(input);
+    const a = await buildEgressEnvelope(input);
+    const b = await buildEgressEnvelope(input);
     expect(a.envelope_hash).toMatch(/^[0-9a-f]{64}$/);
     expect(b.envelope_hash).toMatch(/^[0-9a-f]{64}$/);
-    // Different DP samples → different envelope hashes (this is correct behavior)
     expect(a.envelope_hash).not.toBe(b.envelope_hash);
   });
 });

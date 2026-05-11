@@ -23,6 +23,7 @@ export default function Home() {
   const [busy, setBusy] = useState(false);
   const [ledgerTick, setLedgerTick] = useState(0);
   const [networkOnline, setNetworkOnline] = useState(true);
+  const [sovereigntyEnabled, setSovereigntyEnabled] = useState(true);
 
   useEffect(() => {
     fetch("/api/health").then((r) => r.json()).then(setHealth).catch(() => setHealth(null));
@@ -77,12 +78,25 @@ export default function Home() {
             : "ONLINE — toggle airplane mode to verify on-device inference"}
           {health?.model ? ` · model: ${health.model}` : ""}
         </div>
-        <div className="flex items-baseline justify-between px-6 py-4">
+        <div className="flex flex-wrap items-baseline justify-between gap-3 px-6 py-4">
           <h1 className="text-xl font-semibold">HealthPulse Edge</h1>
-          <div className="text-xs text-zinc-500">
-            {health?.ollama.ok
-              ? `Ollama ${health.ollama.version ?? ""} · ${health.host}`
-              : `Ollama not reachable${health?.ollama.error ? `: ${health.ollama.error}` : ""}`}
+          <div className="flex items-center gap-4">
+            <label className="flex cursor-pointer items-center gap-2 text-xs">
+              <input
+                type="checkbox"
+                checked={sovereigntyEnabled}
+                onChange={(e) => setSovereigntyEnabled(e.target.checked)}
+                className="h-4 w-4 rounded border-zinc-300"
+              />
+              <span className="font-medium">
+                Sovereignty Mode {sovereigntyEnabled ? "ON" : "OFF"}
+              </span>
+            </label>
+            <div className="text-xs text-zinc-500">
+              {health?.ollama.ok
+                ? `Ollama ${health.ollama.version ?? ""} · ${health.host}`
+                : `Ollama not reachable${health?.ollama.error ? `: ${health.ollama.error}` : ""}`}
+            </div>
           </div>
         </div>
       </header>
@@ -142,7 +156,7 @@ export default function Home() {
 
         <WebcamCapture onCapture={() => setLedgerTick((t) => t + 1)} />
 
-        <EgressButton onSubmit={() => setLedgerTick((t) => t + 1)} />
+        <EgressButton sovereigntyEnabled={sovereigntyEnabled} onSubmit={() => setLedgerTick((t) => t + 1)} />
 
         <LedgerView refreshSignal={ledgerTick} />
       </main>

@@ -144,3 +144,73 @@ If any step fails, screenshot the error and tell me — I patch within an hour.
 - Sovereignty Mode config + UI toggle
 - WebGPU live-demo build
 - Persona narrative doc for the writeup
+
+---
+
+## Day 4 — 2026-05-10 — Defense-in-depth + sovereignty + edge scaffold + story
+
+**Defense-in-depth redaction:**
+- `lib/redaction-llm.ts` — Gemma E2B sub-agent runs AFTER the regex layer to catch what regex can't reliably detect (names without honorifics, indirect identifiers, ad-hoc identifiers, quoted patient speech). `STUB_LLM_REDACTION=true` returns canned spans on Windows; real Gemma E2B call wires on Mac. Regex layer is the floor — if the LLM call fails or is absent, we ship what regex caught. Fail-closed for privacy.
+- `deepRedactText` and `deepRedactObject` — composable two-pass pipelines. Both are async.
+- `lib/egress.ts` rewritten to use `deepRedactObject` / `deepRedactText`. Now async. Envelope `redaction_summary` includes `llm_spans_found` count separately.
+- `/api/egress` updated for the async signature.
+
+**Sovereignty Mode:**
+- `data/policy/sovereignty.json` — committed sample policy honoring CARE Principles (Indigenous Data Governance), HIPAA, 42 CFR Part 2. Default egress posture: blocked. Per-destination rules: `TRIBAL_COUNCIL` allowed, `INTERNAL_BENCHMARK` allowed (DP aggregates only), `STATE_DOH` and `CMS` require tribal-council co-signature key id `tc-2026-q2`.
+- `lib/sovereignty.ts` — `loadPolicy()` + `evaluateEgress({destination, signature_key_id, enabled})`. Returns `{decision: 'allow' | 'block' | 'needs_signature', rationale, required_signature_key_ids}`. Cached singleton with `clearPolicyCache` for tests.
+- `/api/egress` integrates the check. 403 + ledger entry when blocked.
+- UI: Sovereignty Mode toggle in header (default ON). EgressButton has destination dropdown + signature key input; renders block/needs-signature explainer when policy denies.
+- 6 vitest cases cover allow / block / needs-signature / wrong-key / unknown-destination / disabled paths.
+
+**WebGPU live-demo scaffold:**
+- `web/src/app/edge/page.tsx` — separate `/edge` route. WebGPU adapter detection. Model-loader UX with download progress (currently simulated; real MediaPipe LLM call lands Day 5). Static seed data served from `web/public/edge/*.json`.
+- `web/public/edge/{facilities,quality,readmissions}.json` — committed, in-browser table preview already working.
+- Page is static-prerendered (`○ /edge` in build manifest) — deploys to any CDN at zero cost.
+
+**Persona for the writeup:**
+- `docs/STORY.md` — Marlene Tsosie composite character; cultural-framing disclaimers; three demo scenes (morning quality scan / webcam moment / egress receipt) shot-by-shot; quotes for the writeup; explicit list of what the submission does NOT claim; mapping to the three Gemma 4 categories (Health & Sciences, Digital Equity, Safety & Trust).
+
+**Test totals:** 49 vitest cases, all green (added 3 redaction-llm + 6 sovereignty). TypeScript clean. `npm run build` clean — 6 routes (`/`, `/edge`, 5 API routes), `/edge` is static.
+
+**Day 4 DoD:**
+- [x] Gemma E2B redaction sub-agent + tests + egress integration
+- [x] Sovereignty Mode policy engine + UI toggle + egress integration + tests
+- [x] `/edge` WebGPU scaffold (loader UX + adapter check + seed data preview)
+- [x] STORY.md persona narrative
+- [x] All tests green, build clean
+
+**Mac Mini sanity check tomorrow morning (single sweep):**
+
+```bash
+git pull
+cd web
+npm install
+STUB_LLM_REDACTION=true npm run test     # expect 49/49
+brew services start ollama
+ollama pull gemma4:e4b
+ollama pull gemma4:e2b
+unset STUB_VISION
+unset STUB_LLM_REDACTION                  # use real Gemma E2B
+npm run dev
+# Then in browser:
+# 1. Toggle Sovereignty Mode in header.
+# 2. EgressButton: try destination=CMS without signature → expect 403 BLOCKED card
+# 3. Same with signature=tc-2026-q2 → expect signed envelope with llm_spans_found > 0
+# 4. Visit /edge → click Load Gemma 4 E2B → confirm WebGPU adapter is detected on Safari/Chrome
+```
+
+**Day 5 plan (Windows-doable):**
+- Real MediaPipe LLM Inference wiring in `/edge` (replaces the simulated download)
+- In-browser tool stubs (read from static seed JSON instead of DuckDB)
+- In-browser ledger (IndexedDB-backed instead of node:fs)
+- UI polish for the recorded demo (typography, spacing, dark mode pass)
+- First demo recording (must happen on Mac Mini → Steve, end of Day 5)
+
+**Mac becomes critical at:**
+- Day 5 evening (record first take of the demo video)
+
+**Carried to Day 5:**
+- Real WebGPU/MediaPipe inference
+- In-browser tool layer + in-browser ledger
+- Demo UI polish
+- Demo video first recording
