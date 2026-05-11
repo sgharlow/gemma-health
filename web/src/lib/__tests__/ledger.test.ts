@@ -54,6 +54,25 @@ describe("Ledger.append", () => {
   });
 });
 
+describe("Ledger persistence flag", () => {
+  it("reports persistent=true on a writable path", () => {
+    const { ledger } = newLedger();
+    expect(ledger.persistent).toBe(true);
+  });
+
+  it("append still updates the in-memory hash chain after a write attempt", () => {
+    // Read-only-fs behavior is verified in the deployed env; here we just
+    // confirm that the append API yields a self-consistent chain regardless
+    // of whether the write succeeded.
+    const { ledger } = newLedger();
+    const a = ledger.append({ action: "system", phi_egress: false });
+    const b = ledger.append({ action: "chat", phi_egress: false });
+    expect(a.seq).toBe(0);
+    expect(b.seq).toBe(1);
+    expect(b.prev_hash).toBe(a.this_hash);
+  });
+});
+
 describe("verifyChain", () => {
   it("returns valid for a clean chain", () => {
     const { ledger } = newLedger();

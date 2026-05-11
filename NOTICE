@@ -1,0 +1,40 @@
+HealthPulse Edge
+Copyright 2026 Steve Harlow
+
+This product is licensed under the Apache License, Version 2.0
+(see LICENSE).
+
+----------------------------------------------------------------
+Hackathon prize-winning grant
+----------------------------------------------------------------
+
+Per the Gemma 4 Good Hackathon (Kaggle, 2026) competition rules,
+section 1.6 (Winner License Type), if this work is awarded a prize,
+the author grants the Competition Sponsor (Google LLC) a license
+to the winning submission and the source code used to generate it
+under the Creative Commons Attribution 4.0 International License
+(CC-BY-4.0):
+
+  https://creativecommons.org/licenses/by/4.0/
+
+This grant is in addition to, and does not supersede, the Apache-2.0
+license under which the work is generally available.
+
+----------------------------------------------------------------
+Third-party acknowledgments
+----------------------------------------------------------------
+
+- The CARE Principles for Indigenous Data Governance, authored by
+  the Global Indigenous Data Alliance.
+  https://www.gida-global.org/care
+
+- MediaPipe LLM Inference for Web (Google AI Edge).
+  https://ai.google.dev/edge/mediapipe/solutions/genai/llm_inference
+
+- litert-community / gemma-4-E2B-it-litert-lm artifact on Hugging
+  Face, used as the WebGPU-loadable Gemma 4 model in the /edge demo.
+  https://huggingface.co/litert-community
+
+- Health Pulse, an earlier project by the same author. The CMS data
+  schema and MCP tool contracts in this repository derive from it.
+  https://github.com/sgharlow/health-pulse

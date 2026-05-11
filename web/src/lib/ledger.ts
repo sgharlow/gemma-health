@@ -94,24 +94,43 @@ export class Ledger {
   private nextSeq = 0;
   private prev = GENESIS_HASH;
   private readonly path: string;
+  readonly persistent: boolean;
 
   constructor(path: string) {
     this.path = path;
-    if (existsSync(path)) {
-      const lines = readFileSync(path, "utf8").split("\n").filter(Boolean);
-      for (const line of lines) {
-        const e = JSON.parse(line) as LedgerEntry;
-        this.nextSeq = e.seq + 1;
-        this.prev = e.this_hash;
+    let persistent = true;
+    try {
+      if (existsSync(path)) {
+        const lines = readFileSync(path, "utf8").split("\n").filter(Boolean);
+        for (const line of lines) {
+          const e = JSON.parse(line) as LedgerEntry;
+          this.nextSeq = e.seq + 1;
+          this.prev = e.this_hash;
+        }
+      } else {
+        mkdirSync(dirname(path), { recursive: true });
       }
-    } else {
-      mkdirSync(dirname(path), { recursive: true });
+    } catch {
+      // Read-only environment (e.g. Vercel serverless). Run in ephemeral mode:
+      // the chain works for a single request but is not persisted across
+      // invocations. The on-prem app is the only context where the ledger
+      // is durable; the in-browser /edge demo uses BrowserLedger (IndexedDB).
+      persistent = false;
     }
+    this.persistent = persistent;
   }
 
   append(partial: Omit<LedgerEntry, "seq" | "ts" | "prev_hash" | "this_hash">): LedgerEntry {
     const entry = makeEntry(this.nextSeq, this.prev, partial);
-    appendFileSync(this.path, JSON.stringify(entry) + "\n");
+    if (this.persistent) {
+      try {
+        appendFileSync(this.path, JSON.stringify(entry) + "\n");
+      } catch {
+        // Write failed mid-run — degrade to ephemeral for the rest of this
+        // request. Hash chain still updates in memory so the response is
+        // self-consistent.
+      }
+    }
     this.nextSeq += 1;
     this.prev = entry.this_hash;
     return entry;

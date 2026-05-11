@@ -44,7 +44,7 @@ Marlene's reality:
 
 Marlene is not unusual. She is approximately the median Critical Access Hospital quality lead.
 
-## The 90-second demo (the video script)
+## The demo (video script — target 2:30, contest max is 3:00)
 
 Hard-cut, no music swells, real footage. Subtitled.
 
@@ -179,7 +179,7 @@ Decision deadline: end of Day 2.
 ## Submission checklist (Kaggle requirements)
 
 - [ ] Kaggle Writeup (project narrative)
-- [ ] Public Video (the 90-second demo)
+- [ ] Public Video (≤3 minutes, on YouTube — hard contest requirement)
 - [ ] Public Code Repository (this repo, public on github.com/sgharlow/gemma-health)
 - [ ] Live Demo (URL, choice TBD per Day 2 decision)
 - [ ] Media Gallery (cover image + 3-5 supporting images)

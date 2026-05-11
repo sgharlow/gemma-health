@@ -25,7 +25,7 @@ The submission's claim is narrow and defensible: *edge AI is the first technolog
 
 ## The three demo scenarios — beats for the video
 
-### Scene 1 — The morning quality scan (90 seconds → 25 seconds of video)
+### Scene 1 — The morning quality scan (~50 seconds in a 2:30 cut)
 
 **Setup.** Marlene's office. A Mac Mini on a counter. The Mini is labeled "HealthPulse Edge — Property of [composite CAH]." Her laptop sits next to it, connected over USB-C.
 

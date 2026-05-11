@@ -7,7 +7,7 @@
 | | |
 |---|---|
 | **Live demo (in your browser)** | https://gemma-health.vercel.app/edge |
-| **Recorded demo video (90 s)** | _link added on submit_ |
+| **Recorded demo video (≤3 min)** | _link added on submit_ |
 | **Submission writeup** | [`WRITEUP.md`](./WRITEUP.md) |
 | **Story / persona** | [`docs/STORY.md`](./docs/STORY.md) |
 | **Strategy brief** | [`BRIEF.md`](./BRIEF.md) |
@@ -115,7 +115,7 @@ See ["What this submission deliberately does NOT try to do"](./WRITEUP.md#what-t
 
 ## License
 
-[Apache-2.0](./LICENSE) — matching the Gemma 4 license terms.
+[Apache-2.0](./LICENSE). If this submission is awarded a prize, the work and its source code are additionally granted under [CC-BY-4.0](https://creativecommons.org/licenses/by/4.0/) per the Gemma 4 Good Hackathon rules — see [`NOTICE`](./NOTICE).
 
 ## Acknowledgments
 

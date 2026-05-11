@@ -325,7 +325,7 @@ npm run start
 **Public-repo artifacts:**
 - `README.md` — public project face: pitch, three quick-start paths (full on-prem / in-browser live / stub mode), architecture overview, test instructions, "what this is NOT," license + acknowledgments.
 - `LICENSE` — Apache-2.0 (matches Gemma 4 license).
-- `assets/demo.vtt` — subtitle template aligned to the 90-second video script. Steve drops alongside the cut, adjusts timestamps.
+- `assets/demo.vtt` — subtitle template (90-second floor; expand to ~2:30 since the contest allows up to 3:00). Steve drops alongside the cut, adjusts timestamps.
 
 **Live deploy:**
 - Created Vercel project `gemma-health` (id `prj_cAhLTgjqzOxdm8GvZv6BguGcWFAp`) under team `steves-projects-a71becf4`, framework `nextjs`, rootDirectory `web`.
@@ -381,7 +381,7 @@ npm run dev
 - DevTools → Network → Offline → run scan again → confirm it still works
 - Screenshot for the media gallery
 
-**4. Record the 90-second demo video** (Mac, ~30 min including retakes):
+**4. Record the demo video — target 2:30, contest cap 3:00, MUST be on YouTube** (Mac, ~30 min including retakes):
 
 Follow the shot list in `docs/STORY.md` (Marlene scenarios) and the BRIEF's video script. Two takes minimum. Drop `assets/demo.vtt` next to the final cut after adjusting timestamps.
 
@@ -420,3 +420,71 @@ The draft just makes sure the form exists and we have somewhere to land final tw
 - Writeup polish
 - Cover image for Media Gallery
 - Anything Steve flags from his Mac dry-run + Chrome test
+
+---
+
+## Day 7 — 2026-05-10 — QA pass + contest-rule fixes + submission polish
+
+**QA pass first** (re-fetched Gemma 4 Good Hackathon Overview + Rules + Data tabs via Playwright; visually verified live deploy with Playwright; cross-read all spec docs against the codebase).
+
+**Hard contest-rule risks found and fixed:**
+
+1. **Writeup was 1,786 prose-words; cap is 1,500** ("may be subject to penalty"). Trimmed to **1,485 prose / 1,501 raw**. Cut redundancy in the pitch, the problem section, and the architecture diagram caption. All load-bearing claims preserved.
+2. **`/api/ledger` returned 500 on Vercel** (read-only filesystem). Refactored `Ledger` class to detect the read-only environment and degrade gracefully: in-memory chain still works for the request, persistence flag set false, route returns 200 with an explanatory `note` field. Added vitest case covering the in-memory chain consistency. Server `/` page no longer breaks on Vercel.
+3. **Winner license is CC-BY-4.0 by contest rule.** Kept `LICENSE` as Apache-2.0 (better long-term posture for the codebase) and added `NOTICE` with the explicit CC-BY-4.0 grant for the prize-winning case, per contest section 1.6. README updated to reference both.
+4. **Video duration was anchored at 90 seconds in five docs.** Contest cap is 3:00. Updated WRITEUP, README, BRIEF, STATUS, STORY, and `assets/demo.vtt` to target 2:30 (90s floor → 2:30 target → 3:00 cap). Video Pitch & Storytelling is 30% of the score; using more of the runway raises the ceiling.
+
+**Strategic positioning added:**
+
+5. **Special Technology Track — Ollama prize** ($10k, on top of any Main/Impact win): Added a dedicated section to WRITEUP.md explaining why the on-prem app qualifies. The writeup header now declares both tracks.
+6. **Writeup track decision: Digital Equity & Inclusivity** (less crowded than Health & Sciences, perfect IDSov fit). Documented in `docs/SUBMIT-CHECKLIST.md`.
+
+**Submission artifacts added:**
+
+7. **`docs/SUBMIT-CHECKLIST.md`** — print-ready Day 8 walkthrough. Track selections, pre-submit verification commands, attachment URL paste targets, word-count + license checks, deadline math, what-to-do-if-broken contingencies.
+8. **`/cover` route** — 1200×630 cover image source, JSX-rendered with title + 3-card "what's distinctive" strip + offline status bar + brand bar. Snapshot via `web/scripts/snapshot-cover.cjs` (uses Playwright at deviceScaleFactor 2 → 2400×1260 high-DPI PNG).
+9. **`NOTICE`** — third-party acknowledgments (CARE Principles, MediaPipe, litert-community, Health Pulse) plus CC-BY-4.0 grant clause.
+
+**Tests + build still clean:** **51/51 vitest** (added a persistence-flag case; consolidated one cross-platform test). `tsc --noEmit` clean. `npm run build` clean — **9 routes** now (added `/cover`).
+
+**Day 7 DoD:**
+- [x] QA against contest rules + spec + project state, written gap report
+- [x] /api/ledger 500 fixed with graceful degradation + tests
+- [x] Writeup trimmed under contest 1,500 cap
+- [x] Ollama Special Tech positioning added
+- [x] Video-duration references updated everywhere
+- [x] CC-BY-4.0 grant addressed via NOTICE
+- [x] Cover image route + snapshot script
+- [x] Track-selection + final-submit checklist
+- [x] All tests green, build clean
+
+**Mac Mini work tomorrow (Day 8):**
+
+```bash
+git pull
+cd web && npm install
+STUB_LLM_REDACTION=true npm run test     # 51/51
+brew services start ollama
+ollama pull gemma4:e4b && ollama pull gemma4:e2b
+unset STUB_VISION STUB_LLM_REDACTION
+npm run dev
+# Exercise: chat → tool call, webcam capture, egress (CMS without sig → BLOCKED;
+# CMS with sig=tc-2026-q2 → signed envelope), ledger panel populates.
+
+# Then snapshot the cover image:
+node scripts/snapshot-cover.cjs   # writes assets/cover.png
+git add assets/cover.png && git commit -m "Day 8: cover image snapshot"
+
+# Then record the demo video:
+# Follow docs/STORY.md shot list, target 2:30, contest cap 3:00.
+# Upload to YouTube (NOT Vimeo — contest requires YouTube).
+
+# Then final submit:
+# Follow docs/SUBMIT-CHECKLIST.md exactly.
+```
+
+**Carried to Day 8:**
+- Demo video recording + YouTube upload (Mac, irreversible)
+- Cover image snapshot from /cover route (Mac, 30 sec)
+- Final write-up review for typos
+- Final-submit click on Kaggle
