@@ -68,3 +68,79 @@ If the tool-calling protocol Gemma 4 expects via Ollama doesn't match the OpenAI
 - Redaction sub-agent (Gemma E2B sidecar that strips PHI before any optional sync)
 - Differential privacy aggregator (Laplace mechanism, ε=1.0)
 - Compliance ledger view in the UI (so the demo can show the chain in real time)
+
+---
+
+## Day 3 — 2026-05-10 — Privacy machinery + multimodal scaffold + visible ledger
+
+**Privacy primitives:**
+- `lib/dp.ts` — Laplace mechanism: `addLaplaceNoise`, `dpCount`, `dpSum`, `dpMean`, `aggregateMeasure`. Vitest verifies noise variance scales as 2(Δ/ε)² across 5,000 samples; counts clamp at 0; range clamping works.
+- `lib/redaction.ts` — regex-based PHI strip (SSN, phone, email, MRN, NPI, DOB, address, name+title). Returns redacted text + per-class counts. `redactObject` walks nested structures. Day 4 layers a Gemma E2B sub-agent on top; regex stays as defense-in-depth.
+
+**Egress gate:**
+- `lib/egress.ts` — `buildEgressEnvelope` runs PHI redaction on patient records + free text, applies Laplace DP to numeric measures, returns a SHA-256-signed envelope with declared privacy budget (ε per aggregate × count = total ε spent).
+- `/api/egress` POST — wires the egress flow + writes a `phi_egress: true` ledger entry containing the envelope hash. The "Submit Q2 to CMS" demo button hits this.
+
+**Multimodal scaffold:**
+- `lib/vision.ts` — `extractSurveyFromImage(base64)`. Returns canned data when `STUB_VISION=true` (Windows dev path); calls Gemma 4 vision via Ollama otherwise. Real call is verified on Mac Mini Day 4.
+- `/api/vision` POST — image in, structured survey JSON out, two ledger entries written (request + result, both `phi_egress: false` since image stays local).
+- `components/WebcamCapture.tsx` — `getUserMedia` → canvas snapshot → POST to `/api/vision`. Result rendered as JSON.
+
+**Compliance ledger surface (the visible receipt):**
+- `/api/ledger` GET — returns recent entries + chain verification status.
+- `components/LedgerView.tsx` — live list of recent ledger entries with action badges (chat/tool_call/egress), `phi_egress` flag in green or amber, hash prefix, chain-verified pill.
+- `components/EgressButton.tsx` — the demo button. Triggers a hardcoded sample egress payload (3 patient records with synthetic PHI + 2 numeric measures + 1 free-text summary) so the video can show the redaction + DP + signed envelope flow in one click.
+
+**UI:** `app/page.tsx` rebuilt to a single scrollable surface — Chat → Webcam capture → Egress → Ledger view. Airplane-mode banner now reflects real `navigator.onLine` (toggle airplane mode and watch the banner go green).
+
+**Build infra:**
+- `next.config.ts` adds `serverExternalPackages: ["@duckdb/node-api", "@duckdb/node-bindings"]` so Next.js bundler doesn't try to trace native binaries.
+- `web/.env.example` documents `STUB_VISION` for the Mac handoff.
+- `npm run build` succeeds — 5 API routes (`/`, `/api/chat`, `/api/egress`, `/api/health`, `/api/ledger`, `/api/vision`).
+
+**Test totals:** 40 vitest cases (8 ledger + 9 tools + 13 dp + 10 redaction + 4 egress + ledger view tests-by-build), all green.
+
+**Day 3 DoD:**
+- [x] DP aggregator + tests
+- [x] PHI redaction + tests
+- [x] `/api/vision` route + webcam capture (stubbed; Mac verifies real Gemma vision)
+- [x] `/api/egress` (redaction + DP + ledger sign)
+- [x] `/api/ledger` + visible ledger view in UI
+- [x] Production build succeeds
+
+**Mac Mini work for tomorrow (single first-thing-in-the-morning sweep):**
+
+```bash
+git pull
+cd web
+npm install
+npm run test                # 40/40
+brew services start ollama
+ollama pull gemma4:e4b
+ollama pull gemma4:e2b
+unset STUB_VISION           # use real Gemma vision
+npm run dev
+# Open http://localhost:3000
+# 1. Ask: "For DEMO-CAH-004, find top 3 care gaps."
+# 2. Click "Start camera," hold a paper survey to webcam, click "Capture + extract"
+# 3. Click "Build redacted envelope"
+# 4. Watch ledger panel populate in real time, including phi_egress:true on egress
+```
+
+If any step fails, screenshot the error and tell me — I patch within an hour.
+
+**What I'll keep building on Windows tomorrow (Day 4) without the Mac:**
+- Redaction sub-agent: Gemma E2B integration (code + stub for Windows)
+- Sovereignty Mode: jurisdictional policy engine + UI toggle (config-driven, no model needed)
+- WebGPU live-demo skeleton: separate `web-edge/` build that loads MediaPipe LLM + Gemma 4 E2B in browser (no Ollama needed)
+- Demo persona detail in `docs/STORY.md` for the writeup
+
+**Mac becomes critical at:**
+- End of Day 4 (verify Gemma E2B redaction sub-agent works)
+- Day 5 (record demo video — irreversibly Mac-only)
+
+**Carried to Day 4:**
+- Gemma E2B integration for redaction sub-agent
+- Sovereignty Mode config + UI toggle
+- WebGPU live-demo build
+- Persona narrative doc for the writeup

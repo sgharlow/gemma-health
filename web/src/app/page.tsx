@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import WebcamCapture from "@/components/WebcamCapture";
+import LedgerView from "@/components/LedgerView";
+import EgressButton from "@/components/EgressButton";
 
 interface Msg {
   role: "user" | "assistant";
@@ -18,13 +21,22 @@ export default function Home() {
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
-  const [ledger, setLedger] = useState<{ count: number; head: string } | null>(null);
+  const [ledgerTick, setLedgerTick] = useState(0);
+  const [networkOnline, setNetworkOnline] = useState(true);
 
   useEffect(() => {
-    fetch("/api/health")
-      .then((r) => r.json())
-      .then(setHealth)
-      .catch(() => setHealth(null));
+    fetch("/api/health").then((r) => r.json()).then(setHealth).catch(() => setHealth(null));
+    if (typeof navigator !== "undefined") {
+      setNetworkOnline(navigator.onLine);
+      const on = () => setNetworkOnline(true);
+      const off = () => setNetworkOnline(false);
+      window.addEventListener("online", on);
+      window.addEventListener("offline", off);
+      return () => {
+        window.removeEventListener("online", on);
+        window.removeEventListener("offline", off);
+      };
+    }
   }, []);
 
   async function send() {
@@ -40,27 +52,24 @@ export default function Home() {
         body: JSON.stringify({ messages: [...messages, userMsg] }),
       });
       const data = await res.json();
-      if (data.reply) {
-        setMessages((m) => [...m, { role: "assistant", content: data.reply }]);
-        setLedger(data.ledger);
-      } else {
-        setMessages((m) => [...m, { role: "assistant", content: `Error: ${data.error ?? "unknown"}` }]);
-      }
+      setMessages((m) => [
+        ...m,
+        { role: "assistant", content: data.reply ?? `Error: ${data.error ?? "unknown"}` },
+      ]);
+      setLedgerTick((t) => t + 1);
     } finally {
       setBusy(false);
     }
   }
 
-  const offline = health?.ollama.ok && typeof navigator !== "undefined" && !navigator.onLine;
+  const offline = !networkOnline;
 
   return (
     <div className="min-h-screen bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
       <header className="border-b border-zinc-200 dark:border-zinc-800">
         <div
           className={`px-4 py-2 text-xs font-medium tracking-wide ${
-            offline
-              ? "bg-emerald-600 text-white"
-              : "bg-amber-500 text-zinc-900"
+            offline ? "bg-emerald-600 text-white" : "bg-amber-500 text-zinc-900"
           }`}
         >
           {offline
@@ -78,15 +87,16 @@ export default function Home() {
         </div>
       </header>
 
-      <main className="mx-auto flex max-w-3xl flex-col gap-4 px-6 py-8">
-        <section className="space-y-4">
+      <main className="mx-auto flex max-w-4xl flex-col gap-6 px-6 py-8">
+        <section className="space-y-3">
+          <h2 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Ask the quality officer</h2>
           {messages.length === 0 && (
-            <div className="rounded-lg border border-dashed border-zinc-300 p-6 text-sm text-zinc-500 dark:border-zinc-700">
-              <p className="mb-3 font-medium text-zinc-700 dark:text-zinc-300">Try asking:</p>
+            <div className="rounded-lg border border-dashed border-zinc-300 p-4 text-xs text-zinc-500 dark:border-zinc-700">
+              <p className="mb-2 font-medium text-zinc-700 dark:text-zinc-300">Try:</p>
               <ul className="list-disc space-y-1 pl-5">
-                <li>Compare facility 030063&apos;s 30-day readmission rate to peer CAHs in Region 8.</li>
-                <li>What DRG is driving our readmissions?</li>
-                <li>Is our HCAHPS score below median for our region?</li>
+                <li>For DEMO-CAH-004, find the top 3 care gaps and tell me which one to tackle first.</li>
+                <li>Compare HCAHPS scores between tribal and non-tribal CAHs.</li>
+                <li>Which states have the worst CAH heart-failure mortality?</li>
               </ul>
             </div>
           )}
@@ -107,36 +117,34 @@ export default function Home() {
               Thinking…
             </div>
           )}
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              send();
+            }}
+            className="flex gap-2"
+          >
+            <input
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Ask about your hospital's quality metrics…"
+              className="flex-1 rounded-lg border border-zinc-300 bg-white px-4 py-3 text-sm shadow-sm outline-none focus:border-zinc-500 dark:border-zinc-700 dark:bg-zinc-900"
+            />
+            <button
+              type="submit"
+              disabled={busy || !input.trim()}
+              className="rounded-lg bg-zinc-900 px-5 py-3 text-sm font-medium text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900"
+            >
+              Send
+            </button>
+          </form>
         </section>
 
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            send();
-          }}
-          className="sticky bottom-4 flex gap-2"
-        >
-          <input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask about your hospital's quality metrics…"
-            className="flex-1 rounded-lg border border-zinc-300 bg-white px-4 py-3 text-sm shadow-sm outline-none focus:border-zinc-500 dark:border-zinc-700 dark:bg-zinc-900"
-          />
-          <button
-            type="submit"
-            disabled={busy || !input.trim()}
-            className="rounded-lg bg-zinc-900 px-5 py-3 text-sm font-medium text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900"
-          >
-            Send
-          </button>
-        </form>
+        <WebcamCapture onCapture={() => setLedgerTick((t) => t + 1)} />
 
-        {ledger && (
-          <footer className="rounded-lg border border-zinc-200 bg-white px-4 py-3 text-xs text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900">
-            <span className="font-medium text-zinc-700 dark:text-zinc-300">Compliance ledger:</span>{" "}
-            {ledger.count} entries · head <code>{ledger.head.slice(0, 16)}…</code> · phi_egress: false
-          </footer>
-        )}
+        <EgressButton onSubmit={() => setLedgerTick((t) => t + 1)} />
+
+        <LedgerView refreshSignal={ledgerTick} />
       </main>
     </div>
   );
