@@ -13,20 +13,41 @@ interface Facility {
   tribal: boolean;
 }
 
+interface CareGap {
+  kind: "quality_measure" | "readmission_drg";
+  measure_id: string;
+  label: string;
+  score?: number;
+  excess_ratio?: number;
+  hint: string;
+}
+
+interface CareGapResult {
+  facility_id: string;
+  gap_count: number;
+  gaps: CareGap[];
+  data_source: string;
+}
+
 const SUMMARY_PROMPT = `You are HealthPulse Edge running in a browser tab. You receive a JSON summary of one CAH's care-gap analysis and write a 2-sentence executive summary for the quality coordinator. Cite the highest-leverage gap and the recommended intervention. Be concise. No PHI.
 
 Input:`;
+
+const PREVIEW_FACILITY_ID = "DEMO-CAH-004";
+
+const DEMO_YOUTUBE_URL = process.env.NEXT_PUBLIC_DEMO_YOUTUBE_URL ?? "";
 
 export default function EdgePage() {
   const [networkOnline, setNetworkOnline] = useState(true);
   const [gpu, setGpu] = useState<{ supported: boolean; reason?: string } | null>(null);
   const [load, setLoad] = useState<LoadProgress>({ state: "idle" });
   const [facilities, setFacilities] = useState<Facility[]>([]);
-  const [selected, setSelected] = useState<string>("DEMO-CAH-004");
+  const [selected, setSelected] = useState<string>(PREVIEW_FACILITY_ID);
   const [busy, setBusy] = useState(false);
   const [summary, setSummary] = useState<string>("");
   const [streaming, setStreaming] = useState<string>("");
   const [ledgerEntries, setLedgerEntries] = useState<BrowserLedgerEntry[]>([]);
+  const [preview, setPreview] = useState<CareGapResult | null>(null);
   const ledgerRef = useRef<BrowserLedger | null>(null);
 
   useEffect(() => {
@@ -36,14 +57,55 @@ export default function EdgePage() {
         f.map((x) => ({ facility_id: x.facility_id, facility_name: x.facility_name, state: x.state, tribal: x.tribal })),
       ),
     );
+
+    // Pre-compute the sample care-gap result for the preview card. Browser-side,
+    // no model needed — proves the data + tool layer work before the visitor
+    // commits to the 1.8 GB download.
+    callEdgeTool("care_gap_finder", { facility_id: PREVIEW_FACILITY_ID })
+      .then((r) => setPreview(r as CareGapResult))
+      .catch(() => undefined);
+
     if (typeof navigator !== "undefined") {
       setNetworkOnline(navigator.onLine);
       const on = () => setNetworkOnline(true);
       const off = () => setNetworkOnline(false);
       window.addEventListener("online", on);
       window.addEventListener("offline", off);
-      ledgerRef.current = new BrowserLedger();
-      ledgerRef.current.read().then(setLedgerEntries);
+
+      const ledger = new BrowserLedger();
+      ledgerRef.current = ledger;
+      void (async () => {
+        const existing = await ledger.read();
+        if (existing.length === 0) {
+          // Seed 4 demo entries so the panel is non-empty on first visit.
+          // Real hash chain — these prove the chain works without requiring
+          // model load. Notes label them as demo seed.
+          await ledger.append({
+            action: "system",
+            phi_egress: false,
+            notes: "demo seed · HealthPulse Edge boot — Gemma 4 ready in browser tab",
+          });
+          await ledger.append({
+            action: "tool_call",
+            tool_name: "care_gap_finder",
+            phi_egress: false,
+            notes: `demo seed · sample tool result for ${PREVIEW_FACILITY_ID}`,
+          });
+          await ledger.append({
+            action: "tool_call",
+            tool_name: "facility_benchmark",
+            phi_egress: false,
+            notes: `demo seed · benchmark for ${PREVIEW_FACILITY_ID} vs region 9 peers`,
+          });
+          await ledger.append({
+            action: "chat",
+            phi_egress: false,
+            notes: "demo seed · executive summary streamed locally",
+          });
+        }
+        setLedgerEntries(await ledger.read());
+      })();
+
       return () => {
         window.removeEventListener("online", on);
         window.removeEventListener("offline", off);
@@ -55,6 +117,12 @@ export default function EdgePage() {
     if (ledgerRef.current) {
       setLedgerEntries(await ledgerRef.current.read());
     }
+  }
+
+  async function clearLedger() {
+    if (!ledgerRef.current) return;
+    await ledgerRef.current.clear();
+    setLedgerEntries([]);
   }
 
   async function load4() {
@@ -128,17 +196,40 @@ export default function EdgePage() {
       </header>
 
       <main className="mx-auto flex max-w-3xl flex-col gap-6 px-6 py-8">
+        {/* Why-download explainer + load button */}
         <section className="rounded-lg border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
           <h2 className="mb-2 text-base font-semibold">Step 1 — Load Gemma 4 in your browser</h2>
-          <p className="mb-4 text-sm text-zinc-600 dark:text-zinc-400">
-            ~1.8 GB on first visit, cached after. Once loaded, switch DevTools to <em>offline</em> and
-            keep using this page — the model stays alive in your tab.
-          </p>
+          <div className="mb-4 rounded border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-900 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-200">
+            <div className="font-medium">Why download 1.8 GB?</div>
+            <p className="mt-1 leading-relaxed">
+              Once cached, Gemma 4 runs entirely in your browser tab. No server. No API key. Your
+              prompt never leaves your device. Toggle DevTools to <em>offline</em> after the load and
+              the model keeps responding. The download happens once per browser; cached after.
+            </p>
+          </div>
 
           {gpu && !gpu.supported && (
             <div className="mb-3 rounded border border-red-200 bg-red-50 p-3 text-xs text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300">
-              WebGPU unavailable: {gpu.reason}. Use Chrome or Edge on a desktop with a discrete GPU,
-              or watch the recorded demo from the writeup.
+              <div>WebGPU unavailable: {gpu.reason}.</div>
+              <div className="mt-1">
+                Use Chrome or Edge on a desktop with a discrete GPU
+                {DEMO_YOUTUBE_URL ? (
+                  <>
+                    {" "}— or{" "}
+                    <a
+                      href={DEMO_YOUTUBE_URL}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="font-medium underline"
+                    >
+                      watch the recorded demo on YouTube ↗
+                    </a>
+                    .
+                  </>
+                ) : (
+                  ", or watch the recorded demo from the writeup."
+                )}
+              </div>
             </div>
           )}
 
@@ -162,6 +253,42 @@ export default function EdgePage() {
           )}
         </section>
 
+        {/* Sample preview card — only shown before model loaded */}
+        {!ready && preview && preview.gap_count > 0 && (
+          <section className="rounded-lg border border-sky-200 bg-sky-50 p-6 shadow-sm dark:border-sky-900 dark:bg-sky-950">
+            <div className="mb-2 flex items-baseline justify-between gap-3">
+              <h2 className="text-base font-semibold text-sky-900 dark:text-sky-200">
+                Preview — what Gemma 4 will summarize once loaded
+              </h2>
+              <span className="text-[11px] uppercase tracking-wide text-sky-700 dark:text-sky-300">
+                tool output, no model required
+              </span>
+            </div>
+            <p className="mb-3 text-xs text-sky-800 dark:text-sky-300">
+              The <code>care_gap_finder</code> tool runs in your browser against the bundled
+              dataset. These are the {preview.gap_count} care gaps it found for {preview.facility_id}.
+              Once the model loads, Gemma will read this JSON and write a 2-sentence executive summary.
+            </p>
+            <ul className="space-y-1.5">
+              {preview.gaps.slice(0, 3).map((g) => (
+                <li
+                  key={`${g.kind}-${g.measure_id}`}
+                  className="rounded bg-white p-2 text-xs ring-1 ring-sky-200 dark:bg-zinc-900 dark:ring-sky-900"
+                >
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="font-medium text-zinc-800 dark:text-zinc-100">{g.label}</span>
+                    <span className="font-mono text-[11px] text-zinc-500">
+                      {g.score != null ? `score ${g.score}` : g.excess_ratio != null ? `excess ${g.excess_ratio.toFixed(2)}×` : ""}
+                    </span>
+                  </div>
+                  <div className="mt-1 text-[11px] text-zinc-600 dark:text-zinc-400">{g.hint}</div>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        {/* Step 2 — quality scan */}
         <section className="rounded-lg border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
           <h2 className="mb-3 text-base font-semibold">Step 2 — Run a quality scan</h2>
           <div className="flex flex-wrap items-end gap-3">
@@ -198,10 +325,22 @@ export default function EdgePage() {
           )}
         </section>
 
+        {/* Compliance Ledger */}
         <section className="rounded-lg border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
           <div className="mb-3 flex items-baseline justify-between">
             <h2 className="text-base font-semibold">Compliance Ledger (this browser tab)</h2>
-            <span className="text-[11px] text-zinc-500">{ledgerEntries.length} entries · IndexedDB-backed</span>
+            <div className="flex items-center gap-3 text-[11px] text-zinc-500">
+              <span>{ledgerEntries.length} entries · IndexedDB-backed</span>
+              {ledgerEntries.length > 0 && (
+                <button
+                  onClick={clearLedger}
+                  className="rounded border border-zinc-300 px-1.5 py-0.5 text-[11px] text-zinc-600 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800"
+                  title="Clear demo + accumulated entries from this browser tab"
+                >
+                  Reset
+                </button>
+              )}
+            </div>
           </div>
           {ledgerEntries.length === 0 ? (
             <p className="text-xs text-zinc-500">No entries yet. Load the model and run a scan.</p>
