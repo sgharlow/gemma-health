@@ -52,8 +52,14 @@ console.log("\n[2/5] Required submission files exist");
     "STATUS.md",
     "docs/STORY.md",
     "docs/SUBMIT-CHECKLIST.md",
+    "docs/VIDEO-SCRIPT.md",
+    "docs/YOUTUBE-METADATA.md",
+    "docs/LINKEDIN-POST.md",
+    "docs/MEDIA-ASSETS.md",
     "assets/cover.png",
     "assets/cover-thumb.png",
+    "assets/youtube-thumb.png",
+    "assets/architecture-diagram.png",
     "assets/screenshot-onprem-home.png",
     "assets/screenshot-edge.png",
     "assets/screenshot-sovereignty-block.png",
@@ -94,6 +100,8 @@ console.log("\n[4/5] Live demo URLs reachable");
     "https://gemma-health.vercel.app/api/ledger",
     "https://gemma-health.vercel.app/cover",
     "https://gemma-health.vercel.app/cover-thumb",
+    "https://gemma-health.vercel.app/architecture",
+    "https://gemma-health.vercel.app/youtube-thumb",
   ];
   (async () => {
     for (const url of targets) {
