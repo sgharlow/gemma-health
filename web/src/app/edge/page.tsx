@@ -33,7 +33,7 @@ const SUMMARY_PROMPT = `You are HealthPulse Edge running in a browser tab. You r
 
 Input:`;
 
-const PREVIEW_FACILITY_ID = "DEMO-CAH-004";
+const PREVIEW_FACILITY_ID = "DEMO-CAH-001";
 
 const DEMO_YOUTUBE_URL = process.env.NEXT_PUBLIC_DEMO_YOUTUBE_URL ?? "";
 

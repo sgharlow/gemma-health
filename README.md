@@ -55,7 +55,7 @@ npm run dev           # http://localhost:3000
 ```
 
 Open http://localhost:3000 and try:
-- *"For DEMO-CAH-004, find the top 3 care gaps and tell me which one to tackle first."*
+- *"For DEMO-CAH-001, find the top 3 care gaps and tell me which one to tackle first."*
 - Click "Start camera" → hold a paper survey to webcam → "Capture + extract"
 - Click "Build envelope" with Sovereignty Mode ON, destination CMS, signature `tc-2026-q2`
 

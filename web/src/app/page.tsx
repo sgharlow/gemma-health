@@ -133,7 +133,7 @@ export default function Home() {
             <div className="rounded-lg border border-dashed border-zinc-300 p-4 text-xs text-zinc-500 dark:border-zinc-700">
               <p className="mb-2 font-medium text-zinc-700 dark:text-zinc-300">Try:</p>
               <ul className="list-disc space-y-1 pl-5">
-                <li>For DEMO-CAH-004, find the top 3 care gaps and tell me which one to tackle first.</li>
+                <li>For DEMO-CAH-001, find the top 3 care gaps and tell me which one to tackle first.</li>
                 <li>Compare HCAHPS scores between tribal and non-tribal CAHs.</li>
                 <li>Which states have the worst CAH heart-failure mortality?</li>
               </ul>
