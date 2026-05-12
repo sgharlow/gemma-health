@@ -1,8 +1,13 @@
 import { NextResponse } from "next/server";
 import { ollamaChat, ollamaPing, type ChatMessage } from "@/lib/ollama";
 import { Ledger, hashJson } from "@/lib/ledger";
-import { listTools, callTool } from "@/lib/tools";
 import { join } from "node:path";
+
+// Tools are imported lazily inside handle() — they pull in @duckdb/node-api
+// which has a native binding (libduckdb.so) that is not present in Vercel's
+// serverless runtime. Loading it eagerly here would crash the route module
+// at import time on Vercel, before the Ollama pre-flight could return a
+// clean error. On the on-prem Mac path the import is fine.
 
 export const runtime = "nodejs";
 
@@ -54,6 +59,11 @@ async function handle(req: Request): Promise<Response> {
       detail: ping.error,
     });
   }
+
+  // Lazy-load the tool registry only after Ollama is confirmed reachable.
+  // Avoids loading the DuckDB native binding on environments where it
+  // cannot succeed (e.g. Vercel serverless without libduckdb.so).
+  const { listTools, callTool } = await import("@/lib/tools");
 
   const ledger = new Ledger(ledgerPath);
   const messages: ChatMessage[] = [{ role: "system", content: SYSTEM_PROMPT }, ...body.messages];
