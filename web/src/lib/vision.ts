@@ -1,6 +1,10 @@
 import { ollamaChat } from "./ollama";
 
-const STUB_VISION = process.env.STUB_VISION === "true" || process.env.STUB_VISION === "1";
+// Read env at call-time so tests + dynamic toggles work.
+function isStubbed(): boolean {
+  const v = process.env.STUB_VISION;
+  return v === "true" || v === "1";
+}
 
 export interface SurveyExtraction {
   patient_initials?: string;
@@ -25,14 +29,20 @@ const STUB_RESPONSE: SurveyExtraction = {
 const SYSTEM = `You are a vision extractor for handwritten patient experience surveys at a Critical Access Hospital. Read the form. Return JSON with these fields when present (omit otherwise): patient_initials, visit_date (YYYY-MM-DD), rating_overall (1-10), rating_communication (1-10), rating_pain_management (1-10), free_text_feedback. Do not invent values you cannot read.`;
 
 export async function extractSurveyFromImage(base64Image: string): Promise<SurveyExtraction> {
-  if (STUB_VISION) return STUB_RESPONSE;
+  if (isStubbed()) return STUB_RESPONSE;
 
+  // Per Gemma 4 docs, the multimodal pipeline expects images on Ollama's
+  // `images` array (not embedded in content text). The model sees the image
+  // before the prompt text — Google's published guidance is to place visual
+  // content first.
   const res = await ollamaChat({
     messages: [
       { role: "system", content: SYSTEM },
       {
         role: "user",
-        content: `Extract the fields from this handwritten patient experience survey. Respond with JSON only.\n\n[IMAGE: base64 attached, ${base64Image.length} chars]`,
+        content:
+          "Extract the fields from this handwritten patient experience survey. Respond with JSON only.",
+        images: [base64Image],
       },
     ],
   });

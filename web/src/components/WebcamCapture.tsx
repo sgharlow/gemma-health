@@ -13,9 +13,11 @@ interface SurveyExtraction {
 }
 
 interface VisionResponse {
-  extraction?: SurveyExtraction;
+  extraction?: SurveyExtraction | null;
   ledger?: { count: number; head: string };
   error?: string;
+  hint?: string;
+  detail?: string;
 }
 
 export default function WebcamCapture({ onCapture }: { onCapture?: () => void }) {
@@ -133,6 +135,12 @@ export default function WebcamCapture({ onCapture }: { onCapture?: () => void })
           <pre className="overflow-auto rounded bg-zinc-50 p-3 text-xs text-zinc-800 dark:bg-zinc-950 dark:text-zinc-200">
             {JSON.stringify(result.extraction, null, 2)}
           </pre>
+        )}
+        {result?.error && !result.extraction && (
+          <div className="rounded bg-amber-50 p-3 text-xs text-amber-900 dark:bg-amber-950 dark:text-amber-200">
+            <div className="font-semibold">{result.error}</div>
+            {result.hint && <div className="mt-1">{result.hint}</div>}
+          </div>
         )}
       </div>
 

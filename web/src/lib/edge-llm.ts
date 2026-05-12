@@ -7,8 +7,10 @@
 
 const DEFAULT_MODEL_URL =
   process.env.NEXT_PUBLIC_GEMMA_EDGE_MODEL_URL ??
-  // Verified-on-Mac default. Update once MediaPipe-packaged Gemma 4 .task URL is final.
-  "https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/main/gemma-4-E2B-it.task";
+  // The web-optimized variant is what MediaPipe LLM Inference for Web expects;
+  // the plain `gemma-4-E2B-it.task` filename is the LiteRT-LM bundle and is
+  // not browser-loadable.
+  "https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/main/gemma-4-E2B-it-web.task";
 
 const SIMULATED = process.env.NEXT_PUBLIC_EDGE_SIMULATED === "true";
 

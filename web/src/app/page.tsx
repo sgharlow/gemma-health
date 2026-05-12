@@ -53,10 +53,12 @@ export default function Home() {
         body: JSON.stringify({ messages: [...messages, userMsg] }),
       });
       const data = await res.json();
-      setMessages((m) => [
-        ...m,
-        { role: "assistant", content: data.reply ?? `Error: ${data.error ?? "unknown"}` },
-      ]);
+      const reply =
+        data.reply ??
+        [data.error && `(${data.error})`, data.hint, data.detail && `details: ${data.detail}`]
+          .filter(Boolean)
+          .join("\n\n");
+      setMessages((m) => [...m, { role: "assistant", content: reply }]);
       setLedgerTick((t) => t + 1);
     } finally {
       setBusy(false);

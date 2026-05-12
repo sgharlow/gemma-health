@@ -3,7 +3,7 @@ const GEMMA_MODEL = process.env.GEMMA_MODEL ?? "gemma4:e4b";
 
 export type ChatMessage =
   | { role: "system"; content: string }
-  | { role: "user"; content: string }
+  | { role: "user"; content: string; images?: string[] }
   | { role: "assistant"; content: string; tool_calls?: ToolCall[] }
   | { role: "tool"; name: string; content: string };
 

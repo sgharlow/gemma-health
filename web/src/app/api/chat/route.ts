@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { ollamaChat, type ChatMessage } from "@/lib/ollama";
+import { ollamaChat, ollamaPing, type ChatMessage } from "@/lib/ollama";
 import { Ledger, hashJson } from "@/lib/ledger";
 import { listTools, callTool } from "@/lib/tools";
 import { join } from "node:path";
@@ -13,9 +13,17 @@ const MAX_TOOL_HOPS = 4;
 const ledgerPath = join(process.cwd(), "..", "data", "ledger", "ledger.jsonl");
 
 export async function POST(req: Request) {
-  const body = (await req.json()) as { messages: ChatMessage[] };
-  const ledger = new Ledger(ledgerPath);
+  let body: { messages: ChatMessage[] };
+  try {
+    body = (await req.json()) as { messages: ChatMessage[] };
+  } catch {
+    return NextResponse.json({ error: "invalid JSON body" }, { status: 400 });
+  }
+  if (!Array.isArray(body?.messages)) {
+    return NextResponse.json({ error: "messages array required" }, { status: 400 });
+  }
 
+  const ledger = new Ledger(ledgerPath);
   const messages: ChatMessage[] = [{ role: "system", content: SYSTEM_PROMPT }, ...body.messages];
   const tools = listTools();
 
@@ -26,41 +34,68 @@ export async function POST(req: Request) {
     notes: "user turn received",
   });
 
-  for (let hop = 0; hop < MAX_TOOL_HOPS; hop++) {
-    const res = await ollamaChat({ messages, tools });
-    const msg = res.message;
-
-    if (msg.tool_calls && msg.tool_calls.length > 0) {
-      messages.push({ role: "assistant", content: msg.content ?? "", tool_calls: msg.tool_calls });
-      for (const tc of msg.tool_calls) {
-        const result = await callTool(tc.function.name, tc.function.arguments);
-        ledger.append({
-          action: "tool_call",
-          tool_name: tc.function.name,
-          args_hash: hashJson(tc.function.arguments),
-          result_hash: hashJson(result),
-          phi_egress: false,
-        });
-        messages.push({ role: "tool", name: tc.function.name, content: JSON.stringify(result) });
-      }
-      continue;
-    }
-
-    ledger.append({
-      action: "chat",
-      output_hash: hashJson(msg.content),
-      phi_egress: false,
-      notes: "assistant final turn",
-    });
-
+  // Pre-flight Ollama. If unreachable, return 200 with a structured error so
+  // the UI can render a helpful message instead of choking on an empty 500
+  // body. This is the path Vercel takes (no Ollama in serverless env).
+  const ping = await ollamaPing();
+  if (!ping.ok) {
     return NextResponse.json({
-      reply: msg.content,
+      reply: null,
+      error: "ollama_unreachable",
+      hint:
+        "This route needs a local Ollama instance. On macOS: `brew install ollama && brew services start ollama && ollama pull gemma4:e4b`. The hosted Vercel deployment cannot run Ollama; visit /edge for the in-browser WebGPU demo instead.",
+      detail: ping.error,
       ledger: { count: ledger.count, head: ledger.headHash },
     });
   }
 
-  return NextResponse.json(
-    { error: `tool-call loop exceeded ${MAX_TOOL_HOPS} hops` },
-    { status: 500 },
-  );
+  try {
+    for (let hop = 0; hop < MAX_TOOL_HOPS; hop++) {
+      const res = await ollamaChat({ messages, tools });
+      const msg = res.message;
+
+      if (msg.tool_calls && msg.tool_calls.length > 0) {
+        messages.push({ role: "assistant", content: msg.content ?? "", tool_calls: msg.tool_calls });
+        for (const tc of msg.tool_calls) {
+          const result = await callTool(tc.function.name, tc.function.arguments);
+          ledger.append({
+            action: "tool_call",
+            tool_name: tc.function.name,
+            args_hash: hashJson(tc.function.arguments),
+            result_hash: hashJson(result),
+            phi_egress: false,
+          });
+          messages.push({ role: "tool", name: tc.function.name, content: JSON.stringify(result) });
+        }
+        continue;
+      }
+
+      ledger.append({
+        action: "chat",
+        output_hash: hashJson(msg.content),
+        phi_egress: false,
+        notes: "assistant final turn",
+      });
+
+      return NextResponse.json({
+        reply: msg.content,
+        ledger: { count: ledger.count, head: ledger.headHash },
+      });
+    }
+
+    return NextResponse.json({
+      reply: null,
+      error: "tool_loop_exceeded",
+      hint: `The model fired tool calls for ${MAX_TOOL_HOPS} hops without converging on a final reply. Try a more focused prompt.`,
+      ledger: { count: ledger.count, head: ledger.headHash },
+    });
+  } catch (e) {
+    return NextResponse.json({
+      reply: null,
+      error: "ollama_error",
+      hint: "Ollama call failed mid-loop. Check `ollama list` to confirm gemma4:e4b is pulled.",
+      detail: e instanceof Error ? e.message : String(e),
+      ledger: { count: ledger.count, head: ledger.headHash },
+    });
+  }
 }
