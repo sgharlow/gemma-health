@@ -14,6 +14,20 @@ interface EgressBody extends EgressInput {
 }
 
 export async function POST(req: Request) {
+  // Defensive top-level wrapper — same pattern as /api/chat and /api/vision.
+  try {
+    return await handle(req);
+  } catch (e) {
+    return NextResponse.json({
+      envelope: null,
+      error: "internal_error",
+      hint: "Egress route crashed.",
+      detail: e instanceof Error ? `${e.name}: ${e.message}` : String(e),
+    });
+  }
+}
+
+async function handle(req: Request): Promise<Response> {
   const body = (await req.json()) as EgressBody;
   if (!body.destination || !body.facility_id) {
     return NextResponse.json({ error: "destination + facility_id required" }, { status: 400 });

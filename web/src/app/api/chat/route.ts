@@ -13,6 +13,24 @@ const MAX_TOOL_HOPS = 4;
 const ledgerPath = join(process.cwd(), "..", "data", "ledger", "ledger.jsonl");
 
 export async function POST(req: Request) {
+  // Defensive top-level wrapper. ANY uncaught error must produce a JSON
+  // response, never let Next.js render its HTML error page (UI then chokes
+  // parsing JSON). Includes errors during module init for the tool registry
+  // (DuckDB binding) which can fail on serverless platforms.
+  try {
+    return await handle(req);
+  } catch (e) {
+    return NextResponse.json({
+      reply: null,
+      error: "internal_error",
+      hint:
+        "Chat route crashed before reaching Ollama. If you're running on Vercel: this route needs a local Ollama runtime. Visit /edge for the in-browser WebGPU demo instead. Locally: check `ollama list` and `npm install` is fresh.",
+      detail: e instanceof Error ? `${e.name}: ${e.message}` : String(e),
+    });
+  }
+}
+
+async function handle(req: Request): Promise<Response> {
   let body: { messages: ChatMessage[] };
   try {
     body = (await req.json()) as { messages: ChatMessage[] };
@@ -21,6 +39,20 @@ export async function POST(req: Request) {
   }
   if (!Array.isArray(body?.messages)) {
     return NextResponse.json({ error: "messages array required" }, { status: 400 });
+  }
+
+  // Pre-flight Ollama BEFORE touching the tool registry (DuckDB import) so
+  // serverless deploys without Ollama get a clean answer without paying the
+  // cost of native-binding init that may fail in the runtime.
+  const ping = await ollamaPing();
+  if (!ping.ok) {
+    return NextResponse.json({
+      reply: null,
+      error: "ollama_unreachable",
+      hint:
+        "This route needs a local Ollama instance. On macOS: `brew install ollama && brew services start ollama && ollama pull gemma4:e4b`. The hosted Vercel deployment cannot run Ollama; visit /edge for the in-browser WebGPU demo instead.",
+      detail: ping.error,
+    });
   }
 
   const ledger = new Ledger(ledgerPath);
@@ -33,21 +65,6 @@ export async function POST(req: Request) {
     phi_egress: false,
     notes: "user turn received",
   });
-
-  // Pre-flight Ollama. If unreachable, return 200 with a structured error so
-  // the UI can render a helpful message instead of choking on an empty 500
-  // body. This is the path Vercel takes (no Ollama in serverless env).
-  const ping = await ollamaPing();
-  if (!ping.ok) {
-    return NextResponse.json({
-      reply: null,
-      error: "ollama_unreachable",
-      hint:
-        "This route needs a local Ollama instance. On macOS: `brew install ollama && brew services start ollama && ollama pull gemma4:e4b`. The hosted Vercel deployment cannot run Ollama; visit /edge for the in-browser WebGPU demo instead.",
-      detail: ping.error,
-      ledger: { count: ledger.count, head: ledger.headHash },
-    });
-  }
 
   try {
     for (let hop = 0; hop < MAX_TOOL_HOPS; hop++) {
