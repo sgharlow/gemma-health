@@ -61,12 +61,17 @@ async function handle(req: Request): Promise<Response> {
     args_hash: hashJson({ destination: body.destination, period: body.reporting_period }),
     result_hash: envelope.envelope_hash,
     phi_egress: true,
+    dp_epsilon: envelope.privacy_budget.total_epsilon_spent,
     notes: `redacted ${envelope.redaction_summary.total_redactions} PHI fields; ${envelope.dp_aggregates.length} DP aggregates; ε=${envelope.privacy_budget.total_epsilon_spent}; sovereignty: ${policy.decision}`,
   });
 
   return NextResponse.json({
     envelope,
     policy,
-    ledger: { count: ledger.count, head: ledger.headHash },
+    ledger: {
+      count: ledger.count,
+      head: ledger.headHash,
+      lifetime_epsilon_spent: ledger.totalEpsilonSpent(),
+    },
   });
 }

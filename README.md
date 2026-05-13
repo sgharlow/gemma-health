@@ -18,7 +18,7 @@
 A self-contained quality intelligence platform for the ~1,350 US Critical Access Hospitals. One overworked nurse-administrator can:
 
 - Find care gaps and rank them by intervention leverage
-- Benchmark against peer CAHs in the same CMS region
+- Benchmark against peer CAHs in the same CMS region (150 synthetic facilities seed-included; production swaps in real CMS Hospital Compare)
 - Detect equity gaps between tribal and non-tribal cohorts
 - Digitize handwritten patient surveys via webcam
 - Produce CMS-submittable aggregates with cryptographic privacy proofs
@@ -79,30 +79,40 @@ After the model loads (~1.8 GB on first visit, cached after):
 
 Set `STUB_VISION=true` and `STUB_LLM_REDACTION=true` in `web/.env.local` to bypass the model calls. Useful for UI iteration. See [`web/.env.example`](./web/.env.example).
 
+### Path D — MCP server for Claude Desktop / Cursor / any MCP host
+
+```bash
+cd mcp
+npm install
+node server.js   # speaks Model Context Protocol over stdio
+```
+
+Wire it into your MCP host (Claude Desktop config snippet in [`mcp/README.md`](./mcp/README.md)) and the same 6 quality tools are callable directly from your chat client. No Ollama, no WebGPU, no browser — just the tools.
+
 ## Architecture
 
 ```
-On-prem app (Mac Mini)        ←→        Live demo (your browser)
-─────────────────────                    ──────────────────────────
-Next.js                                  Next.js (same code)
-Ollama + Gemma 4 26B/E4B/E2B             MediaPipe LLM + Gemma 4 E2B
-DuckDB (CMS data + FHIR)                 Static JSON (same data shape)
-Node fs ledger (SHA-256)                 IndexedDB ledger (SHA-256)
-6 MCP tools (DuckDB-backed)              Same 6 tools (JSON-backed)
+On-prem app (Mac Mini)        ←→        Live demo (your browser)  ←→  MCP server (any host)
+─────────────────────                    ──────────────────────────    ─────────────────────
+Next.js                                  Next.js (same code)            node mcp/server.js
+Ollama + Gemma 4 26B/E4B/E2B             MediaPipe LLM + Gemma 4 E2B    Caller's model (Claude, etc.)
+DuckDB (CMS data + FHIR)                 Static JSON (same data shape)  Same JSON
+Node fs ledger (SHA-256)                 IndexedDB ledger (SHA-256)     (host owns its audit log)
+6 function-calling tools                 Same 6 tools                   Same 6 tools (over MCP stdio)
 ```
 
-Both surfaces use the same tool contracts so the function-calling story is identical. The on-prem app is the product; the in-browser demo is the proof.
+Three surfaces, one tool contract: the on-prem app is the product, the in-browser demo is the proof, and the MCP server lets any host (Claude Desktop, Cursor, etc.) call the same tools directly.
 
 ## Test coverage
 
-49 vitest cases. Run with:
+58 vitest cases. Run with:
 
 ```bash
 cd web
 STUB_LLM_REDACTION=true npm run test
 ```
 
-Covers: SHA-256 hash chain integrity, tamper detection, missing-entry detection, all 8 PHI regex classes, Laplace-mechanism noise variance distribution, Sovereignty Mode decision paths (allow / block / needs-signature), deep-redaction (regex + LLM) integration, egress envelope build, all 6 MCP tools against seed data.
+Covers: SHA-256 hash chain integrity, tamper detection, missing-entry detection, all 8 PHI regex classes, Laplace-mechanism noise variance distribution, Sovereignty Mode decision paths (allow / block / needs-signature) + bundled-policy ↔ JSON parity, deep-redaction (regex + LLM) integration, egress envelope build, `/api/egress` route-handler integration (sovereignty wiring + signed envelopes + lifetime ε), all 6 tools against seed data.
 
 ## What this is NOT
 
@@ -122,4 +132,4 @@ See ["What this submission deliberately does NOT try to do"](./WRITEUP.md#what-t
 - The CARE Principles for Indigenous Data Governance, authored by the Global Indigenous Data Alliance
 - The MediaPipe LLM Inference team at Google
 - The litert-community Hugging Face repository for the WebGPU-packaged Gemma 4 E2B artifact
-- [Health Pulse](https://github.com/sgharlow/health-pulse), an earlier project of mine that supplied the CMS data schema + MCP tool contracts
+- Health Pulse, an earlier project that informed the CMS quality-measure schema and tool-contract shapes used here. This repo is self-contained; nothing is imported from Health Pulse at build or run time.

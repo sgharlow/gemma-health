@@ -1,0 +1,17 @@
+{
+  "name": "healthpulse-edge-mcp",
+  "version": "0.1.0",
+  "description": "MCP (Model Context Protocol) server that exposes the 6 HealthPulse Edge quality-intelligence tools over stdio. Same data + same tool contracts as the web/ on-prem app — different protocol.",
+  "private": true,
+  "main": "server.js",
+  "bin": {
+    "healthpulse-edge-mcp": "server.js"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4"
+  }
+}

@@ -583,3 +583,66 @@ gh repo create sgharlow/gemma-health --public --source=. --remote=origin --push
 | What's blocking Steve | YouTube recording + final-submit click |
 
 **This is as far as I can take the submission without Steve's hands on the Mac and on the Kaggle submit button. Ship it.**
+
+---
+
+## Day 9 — 2026-05-11 — Pre-Mac hardening pass
+
+Worked through a fresh judge-mode audit. Resolved all production bugs + defensibility gaps surfaced by the assessment, in order of impact.
+
+**Production correctness:**
+- **Inlined sovereignty policy.** `data/policy/sovereignty.json` was unreachable from `/api/egress` on Vercel (parent path resolution fails in the serverless bundle). Moved the runtime copy to `web/src/data/sovereignty-policy.ts`; canonical JSON kept as the file a tribal council would ship; new vitest case enforces parity. Sovereignty BLOCK / REQUIRES SIGNATURE screenshots are now reproducible from production.
+- **Differential privacy: mathematically tightened.** `dpMean` rewritten as DP-sum / public-n (correct under add-or-remove-one neighboring datasets) instead of the prior `(hi-lo)/n` sensitivity. Sensitivity semantics documented at the top of `lib/dp.ts`. Cumulative ε now tracked on every ledger entry; `Ledger.totalEpsilonSpent()` returns lifetime spend; `/api/egress` and `/api/health` both expose it. The privacy-budget claim is now defensible end-to-end.
+- **WebGPU model URL hardened.** `lib/edge-llm.ts` now (a) pins the HF revision via `NEXT_PUBLIC_GEMMA_EDGE_MODEL_REV` (defaults to `main` but operator can swap), (b) auto-falls-back to a deterministic simulated narrative on any load failure (MediaPipe import, WebGPU absent, HF 404), and (c) exposes a manual `Use simulated narrative` toggle in the `/edge` header so a judge on Safari / no-WebGPU can still complete the demo. Load progress now reports `mode: real | simulated` so the UX never lies about what's running.
+- **Ollama model resolution.** Tag drift is no longer a code-patch incident. New `resolveGemmaModel(role)` walks documented fallback chains: `gemma4:e4b` → `gemma4` → `gemma4:latest` → `gemma3:4b` → `gemma3` for chat; `gemma4:e2b` → `gemma4:2b` → `gemma3:1b` → `gemma3` for redaction. `/api/health` exposes the resolved tags. Documented in `docs/MODELS.md`.
+- **`/api/health` expanded.** Now returns ledger info (count, head_hash, persistent, lifetime_epsilon_spent), sovereignty info (version, jurisdiction, framework_basis), and resolved model tags — so `curl /api/health` is a one-shot trust signal.
+
+**Defensibility under stats / DP / accessibility scrutiny:**
+- **Synthetic dataset expanded 10×.** `scripts/gen-seed.cjs` is a deterministic (Mulberry32, fixed PRNG seed) generator that produces 150 facilities, 573 quality rows, 295 readmission rows — spread across all 10 CMS regions, ~10% tribal, realistic measure distributions calibrated against published CMS aggregates. **The first 15 facilities are PRESERVED verbatim** so the existing 9 tool-level vitest invariants still anchor. Re-running the script produces byte-identical output. The "peer median" claim now has N=10–36 per region instead of N=2–3.
+- **Real MCP server in `mcp/`.** No more "MCP tools" naming without an MCP. New CommonJS server (`mcp/server.js` + `tools.js` + `data.js`) exposes the same 6 tools over MCP stdio using `@modelcontextprotocol/sdk`. JSON-backed, ~280 LoC, zero shared deps with `web/`. Claude Desktop config snippet in `mcp/README.md`. Justifies the naming across BRIEF/WRITEUP/README and adds a genuine third deployment surface for the same tool contracts.
+- **Egress demo data hits the LLM layer harder.** EgressButton now sends 4 patient records + 2 free-text summaries with a mix of regex-easy items (titles, SSN, phone, address) and LLM-only items (surnames without honorifics, indirect identifiers — "the night-shift charge nurse on Friday Feb 16" — quoted speech with embedded family names). The result panel splits regex vs LLM counts so the LLM layer visibly earns its keep.
+- **a11y pass.** Banner state communicated via icon + text (not color alone); `role="status"` + `aria-live` on dynamic regions; explicit `htmlFor`/`id` pairs on all form controls; focus rings on every interactive element; `aria-busy` on async buttons. Equity track judges score on accessibility — this closes the obvious gaps.
+- **`/edge` reveal separation.** Preview card before model load now shows ONLY raw measure IDs + scores; the post-scan output is the narrative summary. The model's contribution is no longer hidden by a pre-scan card that essentially answered the question.
+- **`/edge` chain-verification UI.** New "Verify chain integrity" button re-walks the IndexedDB ledger and recomputes every SHA-256 from scratch; banner reports `✓ valid · N entries verified` or `✗ broken at #M`. Turns "trust me" into "click and watch."
+- **Synthetic-seed badge.** Both `/` and `/edge` now visibly tag the data as `synthetic seed`. The `data_source: "demo_seed"` field was always in tool output; the badge makes it impossible to miss.
+
+**Tests + verification:**
+- **58 vitest cases**, up from 51. New: 3 sovereignty parity / test-hook cases + 5 `/api/egress` integration cases that hit the route handler with synthetic Requests (catches Vercel-path regressions that lib-level tests can't see). Re-ran after each phase; clean throughout.
+- TypeScript clean. `npm run build` not yet re-run on Windows; should be unaffected by today's changes (no new packages in `web/`, all changes are pure code) — Mac sweep verifies.
+
+**Doc polish:**
+- WRITEUP trimmed surgically: HIPAA §164.312(b) framed as "compatible with audit-control intent" (not "satisfies"); "6 MCP tools" → "6 function-calling tools, exposed as Ollama + MCP server"; added "Known limitations" section; trimmed redundant phrasing to stay under the 1,500 cap. Final: **1,492 / 1,500**.
+- README adds Path D (MCP server) and updates the architecture diagram to show three surfaces. Test count synced.
+- BRIEF: "11 MCP tools from Health Pulse" replaced with "schema borrow, no code import" — claim is honest.
+- MODELS.md documents the fallback chains.
+
+**Empty `mcp/` directory removed** — replaced by the real MCP server.
+
+**Day 9 DoD:**
+- [x] Sovereignty policy inlined; Vercel path bug fixed; parity test added
+- [x] DP semantics tightened; cumulative ε tracked
+- [x] WebGPU model URL pinnable + auto-fallback + manual toggle
+- [x] Ollama model fallback chain + `/api/health` exposure
+- [x] Synthetic dataset expanded to 150 facilities deterministically
+- [x] Real MCP server with installation + Claude Desktop wiring instructions
+- [x] Trickier egress demo data that exercises the LLM layer
+- [x] Chain-verification button + synthetic-seed badge + reveal separation
+- [x] a11y pass on `/`, `/edge`, EgressButton
+- [x] WRITEUP / README / BRIEF / MODELS / STATUS aligned with the new state
+- [x] 58/58 vitest green
+
+**Mac sweep Day 10 — same as before, plus:**
+
+```bash
+# After git pull, npm install in web/ as usual, then ALSO:
+cd mcp && npm install     # one-time, ~5 sec (only @modelcontextprotocol/sdk)
+node server.js            # confirm the MCP banner prints to stderr; Ctrl-C
+```
+
+If the Mac sweep succeeds end-to-end with the real Gemma 4 path:
+1. Record video as planned
+2. Add YouTube URL via `vercel env add NEXT_PUBLIC_DEMO_YOUTUBE_URL production` + redeploy so `/edge` fallback link populates
+3. Run `node scripts/verify-submission.cjs` — expect 0 failures
+4. Flip repo public + submit
+
+If Gemma 4 tags are not in Ollama yet, the fallback chain takes the resolution down to Gemma 3 transparently — note the actual tag in MODELS.md before recording and don't make any "Gemma 4 specifically" claims the resolved model can't back up.

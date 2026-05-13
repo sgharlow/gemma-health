@@ -16,6 +16,7 @@ interface EnvelopeResponse {
     rationale: string;
     required_signature_key_ids?: string[];
   };
+  ledger?: { count: number; head: string; lifetime_epsilon_spent?: number };
   error?: string;
 }
 
@@ -45,10 +46,18 @@ export default function EgressButton({ sovereigntyEnabled, onSubmit }: Props) {
           facility_id: "DEMO-CAH-001",
           sovereignty_mode_enabled: sovereigntyEnabled,
           signature_key_id: signature || undefined,
+          // Demo payload mixes things regex CAN catch (titles, SSN, phone, address)
+          // with things only the LLM layer should catch (surnames without
+          // honorifics, indirect identifiers, ad-hoc identifiers, quoted speech).
           patient_records: [
             { name: "Mr. Yazzie", ssn: "123-45-6789", phone: "(555) 123-4567", dx: "HF" },
             { name: "Ms. Begay", ssn: "987-65-4321", note: "Lives at 1234 Sage Brush Avenue" },
             { name: "Dr. Smith", phone: "(555) 999-1111", dx: "PN" },
+            {
+              // LLM-layer targets: surname-no-title + indirect identifier
+              note: "Yazzie returned for HF check-in; the night-shift charge nurse on Friday Feb 16 noted improved diuresis.",
+              dx: "HF",
+            },
           ],
           numeric_measures: [
             { measure_id: "HCAHPS_OVERALL", values: [76, 78, 81, 84, 79], range: [0, 100] },
@@ -56,6 +65,8 @@ export default function EgressButton({ sovereigntyEnabled, onSubmit }: Props) {
           ],
           free_text_summaries: [
             "Patient Mr. Yazzie reported improved symptoms. Phone follow-up at (555) 123-4567 went well.",
+            // LLM-layer target: quoted patient speech with embedded family name
+            'Begay said "I told my husband Tom about the new meds and he asked the room-14B occupant about side effects."',
           ],
         }),
       });
@@ -77,35 +88,39 @@ export default function EgressButton({ sovereigntyEnabled, onSubmit }: Props) {
             Egress gate (redaction → DP → policy → sign)
           </h2>
           <p className="mt-1 text-[11px] text-amber-800 dark:text-amber-300">
-            3 patient records + 2 measures + 1 free-text summary. Watch what the gate strips before letting it leave.
+            4 patient records + 2 measures + 2 free-text summaries — mix of regex-easy (titles, SSN, phone, address)
+            and LLM-only (surnames without honorifics, indirect identifiers, quoted speech). Watch the gate split them.
           </p>
         </div>
         <div className="flex flex-wrap items-end gap-2">
-          <label className="text-[11px] font-medium text-amber-900 dark:text-amber-200">
+          <label htmlFor="egress-destination" className="text-[11px] font-medium text-amber-900 dark:text-amber-200">
             Destination
             <select
+              id="egress-destination"
               value={destination}
               onChange={(e) => setDestination(e.target.value)}
-              className="ml-2 rounded border border-amber-300 bg-white px-2 py-1 text-xs dark:border-amber-800 dark:bg-zinc-900"
+              className="ml-2 rounded border border-amber-300 bg-white px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-amber-500 dark:border-amber-800 dark:bg-zinc-900"
             >
               {DESTINATIONS.map((d) => (
                 <option key={d}>{d}</option>
               ))}
             </select>
           </label>
-          <label className="text-[11px] font-medium text-amber-900 dark:text-amber-200">
+          <label htmlFor="egress-signature" className="text-[11px] font-medium text-amber-900 dark:text-amber-200">
             Signature key
             <input
+              id="egress-signature"
               value={signature}
               onChange={(e) => setSignature(e.target.value)}
               placeholder="e.g. tc-2026-q2"
-              className="ml-2 w-32 rounded border border-amber-300 bg-white px-2 py-1 text-xs dark:border-amber-800 dark:bg-zinc-900"
+              className="ml-2 w-32 rounded border border-amber-300 bg-white px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-amber-500 dark:border-amber-800 dark:bg-zinc-900"
             />
           </label>
           <button
             onClick={submit}
             disabled={busy}
-            className="rounded bg-amber-600 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50"
+            aria-busy={busy}
+            className="rounded bg-amber-600 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-amber-500"
           >
             {busy ? "Working…" : "Build envelope"}
           </button>
@@ -134,7 +149,10 @@ export default function EgressButton({ sovereigntyEnabled, onSubmit }: Props) {
             </span>{" "}
             ({result.envelope.redaction_summary.classes_found.join(", ")}) ·{" "}
             <span className="text-emerald-700 dark:text-emerald-400">
-              {result.envelope.redaction_summary.llm_spans_found} LLM spans
+              {result.envelope.redaction_summary.llm_spans_found} LLM-only spans
+            </span>{" "}
+            <span className="text-amber-700 dark:text-amber-300" title="Regex catches deterministic patterns; the LLM layer catches indirect identifiers regex can't reliably flag.">
+              (regex caught {result.envelope.redaction_summary.total_redactions - result.envelope.redaction_summary.llm_spans_found}, LLM caught {result.envelope.redaction_summary.llm_spans_found} extra)
             </span>
           </div>
           <div className="rounded bg-white p-2 dark:bg-zinc-900">
@@ -146,8 +164,13 @@ export default function EgressButton({ sovereigntyEnabled, onSubmit }: Props) {
             ))}
           </div>
           <div className="rounded bg-white p-2 dark:bg-zinc-900">
-            <span className="font-medium">Privacy budget spent:</span>{" "}
+            <span className="font-medium">Privacy budget spent (this envelope):</span>{" "}
             ε={result.envelope.privacy_budget.total_epsilon_spent}
+            {result.ledger?.lifetime_epsilon_spent !== undefined && (
+              <span className="ml-3 text-zinc-600 dark:text-zinc-400">
+                · lifetime ε in ledger: {result.ledger.lifetime_epsilon_spent.toFixed(2)}
+              </span>
+            )}
           </div>
           <div className="rounded bg-white p-2 dark:bg-zinc-900">
             <span className="font-medium">Envelope hash:</span>{" "}

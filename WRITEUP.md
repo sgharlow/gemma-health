@@ -36,21 +36,17 @@ Marlene's three options today: Excel (slow, no benchmarking); a $40-80k/year con
 
 A single mini-PC the hospital owns. It runs:
 
-- **Gemma 4 26B / E4B** for quality analysis and natural-language Q&A, served locally via **Ollama**.
-- **Gemma 4 E2B** as a dedicated PHI redaction sub-agent (sidecar).
-- **DuckDB** holding CMS quality data + the hospital's own FHIR exports.
-- A **6-tool MCP function-calling layer** so Gemma can call structured analytics: `facility_benchmark`, `quality_monitor`, `care_gap_finder`, `equity_detector`, `state_ranking`, `cross_cutting_analysis`.
-- A **multimodal handler** that turns webcam captures of handwritten patient surveys into structured FHIR records.
-- A **compliance ledger** (SHA-256 hash chain) that lets a regulator cryptographically verify no PHI ever left the box.
-- A **Sovereignty Mode policy engine** honoring CARE Principles for Indigenous Data Governance.
+- **Gemma 4 26B / E4B** via **Ollama** for quality analysis and natural-language Q&A.
+- **Gemma 4 E2B** as a PHI redaction sidecar.
+- **DuckDB** holding CMS quality data + the hospital's FHIR exports.
+- **6 function-calling tools** — `facility_benchmark`, `quality_monitor`, `care_gap_finder`, `equity_detector`, `state_ranking`, `cross_cutting_analysis` — exposed as Ollama function calls AND as a Model Context Protocol (MCP) server in `mcp/` for Claude Desktop and other MCP hosts.
+- A **multimodal handler** that turns webcam captures of handwritten surveys into structured FHIR.
+- A **compliance ledger** (SHA-256 chain) that lets a regulator cryptographically verify no PHI left the box.
+- A **Sovereignty Mode** policy engine honoring CARE Principles for Indigenous Data Governance.
 
-A typical session:
+A typical session: Marlene types *"Find the top 3 care gaps and tell me which one to tackle first."* Gemma fans out three function calls and returns a 2-sentence summary. She holds handwritten surveys to her webcam; Gemma 4 vision transcribes them to local FHIR. She clicks "Submit Q2 to CMS." Sovereignty Mode demands a co-signature key. The Redaction Sub-Agent runs (regex + Gemma E2B), DP noise (ε=1/aggregate) is applied, and a SHA-256-signed envelope is emitted. Ledger gains an entry: `phi_egress: true (signed)`.
 
-1. Marlene types: *"Find the top 3 care gaps and tell me which one to tackle first."* Gemma 4 fans out three function calls, returns a 2-sentence executive summary.
-2. She holds a stack of handwritten patient experience surveys to her laptop's webcam. Gemma 4 vision transcribes them and adds them to local FHIR.
-3. She clicks "Submit Q2 to CMS." Sovereignty Mode demands a tribal-council co-signature key. The Redaction Sub-Agent runs (regex floor + Gemma E2B semantic pass), strips PHI, applies differential privacy noise (ε=1 per aggregate), and emits a SHA-256-signed envelope. The compliance ledger gains an entry: `phi_egress: true (signed)`.
-
-The whole flow runs on a Mac Mini in Marlene's office. Airplane mode can be on the entire time.
+The whole flow runs on a Mac Mini in Marlene's office, airplane mode on.
 
 ---
 
@@ -59,46 +55,46 @@ The whole flow runs on a Mac Mini in Marlene's office. Airplane mode can be on t
 Five properties of Gemma 4 are load-bearing:
 
 1. **Frontier reasoning at edge sizes.** Quality analysis is not "generate-text" — it's "interpret a benchmark, identify the most actionable intervention, cite a clinical bundle." Gemma 4 26B delivers this locally.
-2. **Native function calling** — for the 6 MCP tools. No brittle ReAct prompting.
+2. **Native function calling** — for the 6 tools. No brittle ReAct prompting.
 3. **Multimodal vision** — table stakes for the webcam capture flow.
-4. **Open weights** — critical for compliance. A regulator can audit which model version was running. A tribal council can verify the model was not silently swapped for one that exfiltrates data. **You cannot do this with a closed model.**
-5. **E2B exists.** A 2 GB sidecar that runs alongside the primary model is exactly what we need for the redaction sub-agent. Without this size point, defense-in-depth redaction would require a second box.
+4. **Open weights** — critical for compliance. A regulator can audit the running model version; a tribal council can verify it was not swapped for a data-exfiltrating clone. **You cannot do this with a closed model.**
+5. **E2B exists** — a 2 GB sidecar runs alongside the primary; without it, defense-in-depth redaction would need a second box.
 
 ---
 
 ## What's distinctive — three layers
 
-Most "edge LLM healthcare" entries this hackathon will be patient-facing chatbots. We chose the opposite end of the value chain — administrative AI for the people running under-resourced hospitals — and added three differentiators:
+Most "edge LLM healthcare" entries this hackathon are patient-facing chatbots. We chose the opposite end of the value chain — administrative AI for under-resourced hospitals — and added three differentiators:
 
 ### 1. Compliance Ledger
 
-Every Gemma inference is locally hashed into an append-only SHA-256 chain. A regulator can verify cryptographically: which actions ran on which day, that the chain has not been tampered with, that `phi_egress: false` was true for every action that didn't go through the egress gate. HIPAA's audit-control requirement under §164.312(b) is satisfied by a ledger the hospital itself cannot retroactively forge.
+Every Gemma inference is locally hashed into an append-only SHA-256 chain. A regulator can verify cryptographically which actions ran on which day, that the chain has not been tampered with, and that `phi_egress: false` held for every action outside the egress gate. The ledger is designed to be compatible with the audit-control intent of HIPAA §164.312(b); the hospital cannot retroactively forge it. Formal compliance certification is a separate exercise.
 
 ### 2. Defense-in-Depth Redaction Sub-Agent
 
 A two-layer pipeline gates any optional egress:
-- **Layer 1 (regex):** SSN, phone, email, MRN, NPI, DOB, address, name+title — fast, deterministic, safety net even if the LLM is unavailable.
-- **Layer 2 (Gemma E2B):** semantic catches that regex can't reliably handle — names without honorifics ("Yazzie reported"), indirect identifiers, ad-hoc identifiers, quoted patient speech.
+- **Layer 1 (regex):** SSN, phone, email, MRN, NPI, DOB, address, name+title — fast, deterministic, runs even if the LLM is unavailable.
+- **Layer 2 (Gemma E2B):** semantic catches regex can't reliably handle — names without honorifics, indirect identifiers, ad-hoc identifiers, quoted patient speech.
 
-If Layer 2 fails or is absent, Layer 1 still runs. **Fail-closed for privacy.** After redaction, numeric aggregates pass through a Laplace-mechanism differential-privacy aggregator (ε=1.0 per aggregate, total ε declared in the envelope).
+If Layer 2 fails or is absent, Layer 1 still runs. **Fail-closed for privacy.** Numeric aggregates then pass through a Laplace differential-privacy aggregator (ε=1.0 per aggregate, total ε declared and persisted to the ledger).
 
 ### 3. Sovereignty Mode
 
-A configurable policy engine honoring [CARE Principles for Indigenous Data Governance](https://www.gida-global.org/care). The policy is owned by the tribal council, not the application: some destinations allowed by default, others require a tribal-council co-signature key, unknown destinations default to BLOCKED.
+A configurable policy engine honoring [CARE Principles for Indigenous Data Governance](https://www.gida-global.org/care). The policy is owned by the tribal council, not the application: some destinations allowed by default, others require a co-signature key, unknown destinations default to BLOCKED.
 
-This is genuinely novel. Almost no commercial AI product honors Indigenous Data Sovereignty (IDSov). Edge AI makes it practical for the first time, because the model can run where the data lives — and the data can live where the community lives.
+This is genuinely novel. Almost no commercial AI product honors Indigenous Data Sovereignty (IDSov). Edge AI makes it practical for the first time, because the model can run where the data lives.
 
 ---
 
 ## Why this qualifies for the Special Technology Track — Ollama
 
-The on-prem product runs entirely on Ollama. We chose Ollama (not a custom inference stack) because it is the most operationally honest path for hospitals that lack IT teams: `brew install ollama` and `ollama pull gemma4:e4b` is the entire bring-up procedure. Three concrete uses:
+The on-prem product runs entirely on Ollama — the most operationally honest path for hospitals without IT teams: `brew install ollama` and `ollama pull gemma4:e4b` is the entire bring-up. Three concrete uses:
 
 - **Primary chat + function calling** via `gemma4:e4b`, served at `http://localhost:11434`.
-- **Sidecar redaction sub-agent** via a separate `gemma4:e2b` invocation. Two models, one runtime, no orchestration code.
-- **Optional batch quality analysis** via `gemma4:26b` on machines with sufficient RAM, run on demand for nightly reports.
+- **Sidecar redaction** via a separate `gemma4:e2b` invocation. Two models, one runtime, no orchestration code.
+- **Optional batch analysis** via `gemma4:26b` on machines with sufficient RAM, run on demand for nightly reports.
 
-Our minimal `lib/ollama.ts` adapter is ~60 lines of TypeScript. No vendor lock-in. The architecture transfers verbatim to any hospital with a $400 box.
+A documented fallback chain (`gemma4:e4b` → `gemma4` → `gemma3:4b`) keeps the on-prem path resilient to tag drift. The adapter is ~150 lines of TypeScript, no vendor lock-in.
 
 ---
 
@@ -120,9 +116,13 @@ This is not staged. The model and the tool layer and the compliance ledger all r
 
 ---
 
+## Known limitations
+
+Synthetic 150-facility seed (production swaps in CMS Hospital Compare). Every tool result carries `data_source: "demo_seed"` so this is visible to the caller. Privacy budget (ε) is summed per envelope and persisted to the ledger; cross-session composition is operator-tracked, not enforced. Architecture-aligned with HIPAA, 42 CFR Part 2, and CARE Principles; no formal certification or tribal council endorsement has been performed.
+
 ## What's next
 
-If we win or place, the prize money funds: a 6-month pilot at one (1) opted-in CAH; replacing the synthetic seed dataset with the actual CMS Hospital Compare ETL; a `litert-community` packaged Gemma 4 26B for browsers; independent security review by a privacy lawyer with HIPAA + IDSov experience; a `gemma-health-policies` repository where tribal councils can fork the Sovereignty Mode policy template.
+If we win or place, the prize funds a 6-month pilot at one opted-in CAH; the real CMS Hospital Compare ETL; a `litert-community` Gemma 4 26B for browsers; independent privacy-lawyer review; and a `gemma-health-policies` repo where tribal councils can fork the Sovereignty Mode template.
 
 If we don't, the repo stays open. The core insight — *edge AI is the first technology that lets under-resourced clinics participate in public-health intelligence without surrendering patient sovereignty* — is true regardless of who ships it first.
 
@@ -130,7 +130,7 @@ If we don't, the repo stays open. The core insight — *edge AI is the first tec
 
 ## Test coverage + reproducibility
 
-51 vitest cases covering the load-bearing privacy machinery: SHA-256 hash chain integrity, tamper detection, missing-entry detection, regex PHI patterns, Laplace mechanism noise variance, Sovereignty Mode decision paths, deep-redaction integration, egress envelope build. All green. TypeScript clean. `npm run build` clean. Apache-2.0 licensed (with explicit CC-BY-4.0 grant for prize-winning use, per contest rules).
+58 vitest cases covering the load-bearing privacy machinery: SHA-256 hash chain integrity, tamper detection, missing-entry detection, regex PHI patterns, Laplace mechanism noise variance, Sovereignty Mode decision paths (including in-bundle policy parity with the canonical JSON), deep-redaction integration, egress envelope build, and a full integration test of `/api/egress` against the route handler. All green. TypeScript clean. `npm run build` clean. Apache-2.0 licensed (with explicit CC-BY-4.0 grant for prize-winning use, per contest rules).
 
 ---
 

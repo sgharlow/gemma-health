@@ -87,7 +87,7 @@ cd ~/path/to/gemma-health
 git pull
 git status                                # MUST show clean
 cd web
-STUB_LLM_REDACTION=true npm run test      # MUST be 51/51
+STUB_LLM_REDACTION=true npm run test      # MUST be 58/58
 
 # Live demo still up
 node -e "['/','/edge','/cover','/cover-thumb','/api/health','/api/ledger'].forEach(p => fetch('https://gemma-health.vercel.app'+p).then(r => console.log(r.status, p)))"
@@ -181,7 +181,7 @@ You already have an in-progress draft (URL reserved). Don't create a new one.
 |---|---|
 | `/edge` model fails to load in Chrome | Set `NEXT_PUBLIC_EDGE_SIMULATED=true` on Vercel → redeploy → page shows simulated path. Your Mac Mini video already shows the real flow; the live demo is supplemental proof. |
 | Vercel deploy is broken | Use the most recent working deploy URL from Vercel dashboard → Deployments. Older deployments stay live unless explicitly removed. |
-| Tests fail on Mac with fresh `npm install` | Set `STUB_LLM_REDACTION=true STUB_VISION=true` env. The 51 cases all pass with stubs. |
+| Tests fail on Mac with fresh `npm install` | Set `STUB_LLM_REDACTION=true STUB_VISION=true` env. The 58 cases all pass with stubs. |
 | YouTube upload fails | Don't substitute Vimeo — contest rules say YouTube specifically. Wait it out, contact Kaggle support if needed. |
 | `/api/chat` returns 500 on Vercel | Already hardened — `lib/tools` is lazy-imported only after the Ollama check. If you broke it, revert to commit `5122abb` or later. |
 | Form rejects subtitle as too long | Use the 132-char version in Step 1 above. The body's blockquote tagline is longer; that goes in the body Description, NOT the Subtitle field. |

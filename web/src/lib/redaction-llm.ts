@@ -9,7 +9,7 @@
  * LLM to be present.
  */
 
-import { ollamaChat, type ChatMessage } from "./ollama";
+import { ollamaChat, resolveGemmaModel, type ChatMessage } from "./ollama";
 import { redactPhi, redactObject, type RedactionResult } from "./redaction";
 
 // Read env at call-time so vitest beforeAll/beforeEach can set it.
@@ -17,7 +17,6 @@ function isStubbed(): boolean {
   const v = process.env.STUB_LLM_REDACTION;
   return v === "true" || v === "1";
 }
-const REDACTION_MODEL = process.env.GEMMA_REDACTION_MODEL ?? "gemma4:e2b";
 
 const SYSTEM = `You are a PHI redaction reviewer. The text below has already been scrubbed for SSN, phone, email, MRN, NPI, DOB, address, and named honorifics. Your job is to find PHI the regex layer missed.
 
@@ -56,7 +55,8 @@ async function callRedactionLlm(text: string): Promise<LlmResponse> {
     { role: "user", content: text },
   ];
   try {
-    const res = await ollamaChat({ messages, model: REDACTION_MODEL });
+    const model = await resolveGemmaModel("redaction");
+    const res = await ollamaChat({ messages, model });
     const raw = res.message.content?.trim() ?? "";
     const m = raw.match(/\{[\s\S]*\}/);
     if (!m) return { spans: [] };

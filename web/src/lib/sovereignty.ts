@@ -1,56 +1,30 @@
-import { existsSync, readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { DEFAULT_POLICY } from "../data/sovereignty-policy";
+import type { SovereigntyPolicy, PolicyEvaluation } from "./sovereignty-types";
 
-const POLICY_PATH =
-  process.env.HPE_POLICY_PATH ?? resolve(process.cwd(), "..", "data", "policy", "sovereignty.json");
-
-export interface DestinationPolicy {
-  allowed: boolean;
-  requires_signature: boolean;
-  rationale: string;
-}
-
-export interface SovereigntyPolicy {
-  version: string;
-  jurisdiction: string;
-  framework_basis: string[];
-  default_egress_posture: "allowed" | "blocked";
-  destinations: Record<string, DestinationPolicy>;
-  authorized_signature_key_ids: string[];
-  notes?: string;
-}
-
-export interface PolicyEvaluation {
-  decision: "allow" | "block" | "needs_signature";
-  destination: string;
-  jurisdiction: string;
-  rationale: string;
-  required_signature_key_ids?: string[];
-  signature_provided?: string;
-  signature_valid?: boolean;
-}
+export type { SovereigntyPolicy, DestinationPolicy, PolicyEvaluation } from "./sovereignty-types";
 
 let cached: SovereigntyPolicy | null = null;
+let override: SovereigntyPolicy | null = null;
 
 export function loadPolicy(): SovereigntyPolicy {
+  if (override) return override;
   if (cached) return cached;
-  if (!existsSync(POLICY_PATH)) {
-    cached = {
-      version: "default",
-      jurisdiction: "unconfigured",
-      framework_basis: [],
-      default_egress_posture: "blocked",
-      destinations: {},
-      authorized_signature_key_ids: [],
-      notes: `No policy file at ${POLICY_PATH}; defaulting to blocked.`,
-    };
-    return cached;
-  }
-  cached = JSON.parse(readFileSync(POLICY_PATH, "utf8")) as SovereigntyPolicy;
+  cached = DEFAULT_POLICY;
   return cached;
 }
 
 export function clearPolicyCache(): void {
+  cached = null;
+}
+
+/**
+ * Test hook — lets the test suite swap in an alternate policy without
+ * touching the file system. Production code never calls this; on the Mac
+ * the on-prem operator can replace `DEFAULT_POLICY` at build time by
+ * editing `web/src/data/sovereignty-policy.ts`.
+ */
+export function setPolicyForTesting(p: SovereigntyPolicy | null): void {
+  override = p;
   cached = null;
 }
 

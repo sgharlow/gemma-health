@@ -13,6 +13,9 @@ export interface LedgerEntry {
   args_hash?: string;
   result_hash?: string;
   phi_egress: boolean;
+  /** Privacy budget (ε) spent by this entry, if any. Composed across entries
+   *  via Ledger.totalEpsilonSpent for the lifetime view. */
+  dp_epsilon?: number;
   notes?: string;
   prev_hash: string;
   this_hash: string;
@@ -79,6 +82,7 @@ export function verifyChain(entries: LedgerEntry[]): LedgerVerification {
       args_hash: e.args_hash,
       result_hash: e.result_hash,
       phi_egress: e.phi_egress,
+      dp_epsilon: e.dp_epsilon,
       notes: e.notes,
       prev_hash: e.prev_hash,
     });
@@ -150,5 +154,12 @@ export class Ledger {
 
   get count(): number {
     return this.nextSeq;
+  }
+
+  /** Lifetime privacy budget spent — sum of `dp_epsilon` across all entries
+   *  ever written to this ledger (re-read from disk so this stays correct
+   *  even after a serverless cold start where the in-memory state resets). */
+  totalEpsilonSpent(): number {
+    return this.read().reduce((acc, e) => acc + (e.dp_epsilon ?? 0), 0);
   }
 }

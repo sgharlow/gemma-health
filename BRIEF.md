@@ -112,18 +112,18 @@ Hard-cut, no music swells, real footage. Subtitled.
 └─────────────────────────────────────────────────────────────┘
 ```
 
-**Honest reuse from Health Pulse:**
-- 11 MCP tools (`quality_monitor`, `care_gap_finder`, etc.) — keep the contracts, may need to simplify Domo dependencies for local DuckDB
-- CMS data schema + ingestion script
-- Synthea synthetic FHIR dataset (100 patients) for demo
+**Schema borrow from Health Pulse (no code import):**
+- Tool-contract shapes for `quality_monitor`, `care_gap_finder`, etc. — re-implemented locally against DuckDB / static JSON
+- CMS quality-measure column conventions
 - Next.js UI scaffold patterns
 
 **Net new for HealthPulse Edge:**
-- Local Gemma 4 runtime integration (Ollama)
+- 6 function-calling tools, exposed three ways (Ollama, in-browser, MCP server)
+- Local Gemma 4 runtime integration (Ollama) with documented model fallback chain
 - Webcam multimodal handler
-- Redaction sub-agent + differential privacy aggregator
-- Compliance ledger
-- Sovereignty Mode policy engine
+- Redaction sub-agent + Laplace differential-privacy aggregator
+- Compliance ledger (SHA-256 chain) with cumulative ε tracking
+- Sovereignty Mode policy engine (bundled TS module + canonical JSON)
 - Offline-first UX (airplane mode banner, queued egress)
 
 ## 8-day plan

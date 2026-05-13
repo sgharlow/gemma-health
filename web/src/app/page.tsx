@@ -71,14 +71,19 @@ export default function Home() {
     <div className="min-h-screen bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
       <header className="border-b border-zinc-200 dark:border-zinc-800">
         <div
-          className={`px-4 py-2 text-xs font-medium tracking-wide ${
+          role="status"
+          aria-live="polite"
+          className={`flex items-center gap-2 px-4 py-2 text-xs font-medium tracking-wide ${
             offline ? "bg-emerald-600 text-white" : "bg-amber-500 text-zinc-900"
           }`}
         >
-          {offline
-            ? "OFFLINE — Gemma 4 running locally · No data leaves this device"
-            : "ONLINE — toggle airplane mode to verify on-device inference"}
-          {health?.model ? ` · model: ${health.model}` : ""}
+          <span aria-hidden="true">{offline ? "✓" : "●"}</span>
+          <span>
+            {offline
+              ? "OFFLINE — Gemma 4 running locally · No data leaves this device"
+              : "ONLINE — toggle airplane mode to verify on-device inference"}
+            {health?.model ? ` · model: ${health.model}` : ""}
+          </span>
         </div>
         <div className="flex flex-wrap items-baseline justify-between gap-3 px-6 py-4">
           <h1 className="text-xl font-semibold">HealthPulse Edge</h1>
@@ -88,7 +93,8 @@ export default function Home() {
                 type="checkbox"
                 checked={sovereigntyEnabled}
                 onChange={(e) => setSovereigntyEnabled(e.target.checked)}
-                className="h-4 w-4 rounded border-zinc-300"
+                aria-label="Toggle Sovereignty Mode policy enforcement"
+                className="h-4 w-4 rounded border-zinc-300 focus:outline-none focus:ring-2 focus:ring-emerald-500"
               />
               <span className="font-medium">
                 Sovereignty Mode {sovereigntyEnabled ? "ON" : "OFF"}
@@ -126,9 +132,14 @@ export default function Home() {
           </div>
         )}
         <section className="space-y-3 rounded-lg border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-          <h2 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">
-            Ask the quality officer
-          </h2>
+          <div className="flex items-baseline justify-between gap-3">
+            <h2 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+              Ask the quality officer
+            </h2>
+            <span className="rounded bg-sky-100 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-sky-800 dark:bg-sky-950 dark:text-sky-300">
+              synthetic seed data
+            </span>
+          </div>
           {messages.length === 0 && (
             <div className="rounded-lg border border-dashed border-zinc-300 p-4 text-xs text-zinc-500 dark:border-zinc-700">
               <p className="mb-2 font-medium text-zinc-700 dark:text-zinc-300">Try:</p>
@@ -163,16 +174,21 @@ export default function Home() {
             }}
             className="flex gap-2"
           >
+            <label htmlFor="chat-input" className="sr-only">
+              Quality officer question
+            </label>
             <input
+              id="chat-input"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Ask about your hospital's quality metrics…"
-              className="flex-1 rounded-lg border border-zinc-300 bg-white px-4 py-3 text-sm shadow-sm outline-none focus:border-zinc-500 dark:border-zinc-700 dark:bg-zinc-900"
+              className="flex-1 rounded-lg border border-zinc-300 bg-white px-4 py-3 text-sm shadow-sm outline-none focus:border-zinc-500 focus:ring-2 focus:ring-emerald-500 dark:border-zinc-700 dark:bg-zinc-900"
             />
             <button
               type="submit"
               disabled={busy || !input.trim()}
-              className="rounded-lg bg-zinc-900 px-5 py-3 text-sm font-medium text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900"
+              aria-busy={busy}
+              className="rounded-lg bg-zinc-900 px-5 py-3 text-sm font-medium text-white disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-zinc-100 dark:text-zinc-900"
             >
               Send
             </button>

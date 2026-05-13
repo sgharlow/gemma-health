@@ -25,16 +25,30 @@ ollama run gemma4:e4b "Say 'HealthPulse Edge online' and nothing else."
 ollama pull gemma4:26b
 ```
 
-If `gemma4:e4b` is not yet a published Ollama tag at install time, fall back to whatever the current Gemma 4 tag is (e.g., `gemma4:latest`) and update `GEMMA_MODEL` env var in `web/.env.local`.
+If `gemma4:e4b` is not yet a published Ollama tag at install time the adapter automatically walks a documented fallback chain — no code patch needed.
+
+## Model resolution fallback chains
+
+`lib/ollama.ts` walks these chains at first use (cached afterward, per role):
+
+| Role | Env-pinned head | Fallback chain (in order) |
+|---|---|---|
+| Primary (chat + function calling) | `$GEMMA_MODEL` (default `gemma4:e4b`) | `gemma4:e4b` → `gemma4` → `gemma4:latest` → `gemma3:4b` → `gemma3` |
+| Redaction sub-agent | `$GEMMA_REDACTION_MODEL` (default `gemma4:e2b`) | `gemma4:e2b` → `gemma4:2b` → `gemma3:1b` → `gemma3` |
+
+Resolution probes `GET /api/tags` once, picks the first installed tag in the chain (exact or `<tag>-`/`<tag>.` prefix match), and caches the result. If nothing matches, the head tag is returned and the Ollama call surfaces a clean error naming the missing tag.
+
+`GET /api/health` reports the resolved tags as `resolved_primary_model` / `resolved_redaction_model` so the operator can see what the adapter actually picked.
 
 ## Environment variables (web/.env.local)
 
 ```
 OLLAMA_HOST=http://localhost:11434
 GEMMA_MODEL=gemma4:e4b
+GEMMA_REDACTION_MODEL=gemma4:e2b
 ```
 
-Both have safe defaults in `web/src/lib/ollama.ts`, so the `.env.local` is only needed if you change them.
+All have safe defaults in `web/src/lib/ollama.ts`, so `.env.local` is only needed to pin to a non-default tag.
 
 ## Sanity check from the web app
 

@@ -91,24 +91,35 @@ console.log("\n[3/5] WRITEUP placeholders cleared");
   } catch (e) { fail("placeholder check", e.message); }
 }
 
-console.log("\n[4/5] Live demo URLs reachable");
+console.log("\n[4/5] Live demo URLs reachable + content sane");
 {
+  // Each target: [url, optional content needle]. The needle catches the kind
+  // of regression where a deploy 200s with a stale or broken page.
   const targets = [
-    "https://gemma-health.vercel.app/",
-    "https://gemma-health.vercel.app/edge",
-    "https://gemma-health.vercel.app/api/health",
-    "https://gemma-health.vercel.app/api/ledger",
-    "https://gemma-health.vercel.app/cover",
-    "https://gemma-health.vercel.app/cover-thumb",
-    "https://gemma-health.vercel.app/architecture",
-    "https://gemma-health.vercel.app/youtube-thumb",
+    ["https://gemma-health.vercel.app/", "HealthPulse Edge"],
+    ["https://gemma-health.vercel.app/edge", "Run care-gap scan"],
+    ["https://gemma-health.vercel.app/api/health", "sovereignty"],
+    ["https://gemma-health.vercel.app/api/ledger", null],
+    ["https://gemma-health.vercel.app/cover", null],
+    ["https://gemma-health.vercel.app/cover-thumb", null],
+    ["https://gemma-health.vercel.app/architecture", null],
+    ["https://gemma-health.vercel.app/youtube-thumb", null],
   ];
   (async () => {
-    for (const url of targets) {
+    for (const [url, needle] of targets) {
       try {
-        const r = await fetch(url, { signal: AbortSignal.timeout(8000) });
-        if (r.status === 200) pass(url);
-        else fail(url, `HTTP ${r.status}`);
+        const r = await fetch(url, { signal: AbortSignal.timeout(10000) });
+        if (r.status !== 200) {
+          fail(url, `HTTP ${r.status}`);
+          continue;
+        }
+        if (needle) {
+          const text = await r.text();
+          if (text.includes(needle)) pass(url, `(contains "${needle}")`);
+          else fail(url, `200 but missing expected content: "${needle}"`);
+        } else {
+          pass(url);
+        }
       } catch (e) { fail(url, e.message); }
     }
     finalReport();

@@ -1,12 +1,20 @@
 /**
  * Differential privacy via the Laplace mechanism.
  *
- * For a numeric query f with sensitivity Δ, releasing f(x) + Lap(Δ/ε)
- * is ε-differentially private. Sensitivity is the maximum change in f
- * caused by adding/removing one record:
- *   - count: Δ = 1
- *   - sum over a clamped range [a,b]: Δ = b - a
- *   - mean over n records in [a,b]: Δ = (b - a) / n
+ * Neighboring-datasets definition: ADD-OR-REMOVE-ONE record (the standard
+ * unbounded DP convention). Sensitivities under this definition:
+ *
+ *   - count: Δ = 1  (one record changes the count by exactly 1)
+ *   - sum over values clamped to [a,b]: Δ = (b - a)
+ *     (one record can contribute at most (b - a) to the clamped sum)
+ *   - mean: NOT released directly. Instead we release the clamped sum
+ *     (sensitivity b - a) and treat `n` as public, then divide. This avoids
+ *     the (b - a)/n sensitivity that depends on the record count, which
+ *     leaks information about n under add-or-remove neighboring datasets.
+ *
+ * Budget: each scalar release spends ε. Composition is the operator's
+ * responsibility — `egress.ts` records the per-envelope budget; the ledger
+ * sums lifetime ε via the `dp_epsilon` field on every entry.
  */
 
 function laplaceSample(scale: number, rng: () => number = Math.random): number {
@@ -39,12 +47,15 @@ export function dpSum(values: number[], range: [number, number], opts: DpOptions
   return addLaplaceNoise(sum, hi - lo, opts);
 }
 
+/**
+ * DP mean = (DP-sum) / public-n. Sensitivity of the sum is (hi - lo); we
+ * treat n as public (it is reported as raw_count in the envelope). For
+ * empty input we return 0 with no noise spend.
+ */
 export function dpMean(values: number[], range: [number, number], opts: DpOptions): number {
   if (values.length === 0) return 0;
-  const [lo, hi] = range;
-  const clamped = values.map((v) => Math.min(hi, Math.max(lo, v)));
-  const mean = clamped.reduce((a, b) => a + b, 0) / clamped.length;
-  return addLaplaceNoise(mean, (hi - lo) / clamped.length, opts);
+  const noisedSum = dpSum(values, range, opts);
+  return noisedSum / values.length;
 }
 
 export interface DpAggregate {
@@ -54,6 +65,11 @@ export interface DpAggregate {
   raw_mean?: number;
   dp_mean?: number;
   epsilon: number;
+  /**
+   * Sensitivity of the noised query in operator-visible units. For a mean
+   * computed as DP-sum/n with public n, this is (hi - lo) / n — the
+   * effective per-record impact on the released value.
+   */
   sensitivity: number;
 }
 
