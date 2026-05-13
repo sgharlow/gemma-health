@@ -54,13 +54,13 @@ Hard-cut, no music swells, real footage. Subtitled.
 
 **0:12 — The first ask.** Marlene types: *"Compare our 30-day readmission rate to peer CAHs in CMS Region 8 and tell me which DRG is dragging it down most."*
 
-**0:20 — Function calling in action.** Screen shows three tool calls fanning out (these are the existing 11 Health Pulse MCP tools): `facility_benchmark` → `quality_monitor` → `cross_cutting_analysis`. Result renders as a chart + 3-sentence narrative. *"Your readmission rate is 14.2% vs. peer median 11.8%. The DRG driving this is 291 (heart failure), with 28% of readmissions occurring in the 7–14 day window. Recommend reviewing transitional care protocols for HF discharges."*
+**0:20 — Function calling in action.** Screen shows three tool calls fanning out (HealthPulse Edge ships 6 MCP tools, schema-borrowed from Health Pulse): `facility_benchmark` → `quality_monitor` → `cross_cutting_analysis`. Result renders as a chart + 3-sentence narrative. *"Your readmission rate is 14.2% vs. peer median 11.8%. The DRG driving this is 291 (heart failure), with 28% of readmissions occurring in the 7–14 day window. Recommend reviewing transitional care protocols for HF discharges."*
 
 **0:38 — The multimodal moment.** Marlene picks up a stack of handwritten patient experience surveys. Holds one to the laptop's webcam. The screen shows Gemma 4 transcribing it in real time — handwritten English plus a note in Diné Bizaad (Navajo) handled gracefully — and then asking: *"Add this to the Q2 patient experience cohort?"* She nods. It does.
 
 **0:55 — The compliance receipt.** A small panel in the corner shows the latest entry in the Compliance Ledger: a SHA-256 hash, a timestamp, a tool call, the assertion `phi_egress: false`, signed. *"Every action is logged. No data has left this device."*
 
-**1:10 — The federation hook.** Marlene clicks "Submit Q2 to CMS." A separate panel: "Redaction Agent: 142 PHI fields stripped. Differential privacy noise applied (ε=1.0). Aggregate ready." She approves. *Now and only now*, the airplane mode icon flickers off momentarily — the redacted aggregate ships — then back on.
+**1:10 — The federation hook.** Marlene clicks "Submit Q2 to CMS." A separate panel: "Redaction Agent: over a hundred PHI fields stripped. Differential privacy noise applied (ε=1.0 per aggregate). Aggregate ready." She approves. *Now and only now*, the airplane mode icon flickers off momentarily — the redacted aggregate ships — then back on.
 
 **1:25 — The closer.** Voiceover: *"Frontier intelligence does not require a frontier datacenter. With Gemma 4, the smallest hospital in America can do what only the largest could yesterday — without surrendering a patient's right to be unknown."*
 
@@ -83,15 +83,17 @@ Hard-cut, no music swells, real footage. Subtitled.
 │                          ↕                                  │
 │  ┌─────────────────────────────────────────────────────┐    │
 │  │  Gemma 4 Runtime                                    │    │
-│  │   - Ollama (gemma4:26b for primary reasoning)       │    │
+│  │   - Ollama (gemma4:e4b for primary reasoning +      │    │
+│  │     tool calls + vision)                            │    │
 │  │   - Ollama (gemma4:e2b for redaction sub-agent)     │    │
 │  │   - vision endpoint for multimodal forms            │    │
 │  └─────────────────────────────────────────────────────┘    │
 │                          ↕                                  │
 │  ┌─────────────────────────────────────────────────────┐    │
-│  │  Local MCP Tool Server (reused from Health Pulse)   │    │
-│  │   11 tools: quality_monitor, care_gap_finder,       │    │
-│  │   equity_detector, facility_benchmark, ...          │    │
+│  │  Local MCP Tool Server (schema from Health Pulse)   │    │
+│  │   6 tools: quality_monitor, care_gap_finder,        │    │
+│  │   equity_detector, facility_benchmark,              │    │
+│  │   state_ranking, cross_cutting_analysis             │    │
 │  │   Backed by local DuckDB over CMS parquet           │    │
 │  └─────────────────────────────────────────────────────┘    │
 │                          ↕                                  │

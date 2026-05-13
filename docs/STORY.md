@@ -17,7 +17,7 @@ She works at a 25-bed Critical Access Hospital. The hospital is fictional — a 
 
 ## Cultural framing — what we are careful about
 
-Marlene is composite. The hospital is composite. The tribal nation in our framing is the Navajo Nation but no actual Navajo Nation hospital, IHS facility, or healthcare worker is depicted, named, or implied. The synthetic facilities (`DEMO-CAH-001` through `DEMO-CAH-015`) include 5 explicitly tribal CAHs distributed across CMS regions to mirror the real geography of tribal CAHs without claiming to represent any specific one.
+Marlene is composite. The hospital is composite. The tribal nation in our framing is the Navajo Nation but no actual Navajo Nation hospital, IHS facility, or healthcare worker is depicted, named, or implied. The canonical demo facilities (`DEMO-CAH-001` through `DEMO-CAH-015`, the first 15 of a 150-facility synthetic seed) include 5 explicitly tribal CAHs distributed across CMS regions to mirror the real geography of tribal CAHs without claiming to represent any specific one.
 
 We use the term **Indigenous Data Sovereignty (IDSov)** because it is the established name for the legal/ethical framework, anchored in the [CARE Principles for Indigenous Data Governance](https://www.gida-global.org/care). We cite the framework; we do not speak for any nation.
 
@@ -53,7 +53,7 @@ The submission's claim is narrow and defensible: *edge AI is the first technolog
 
 **The shot.** Two things happen in sequence on screen:
 1. The Sovereignty Mode policy engine evaluates the request. CMS requires a tribal council co-signature. Marlene enters `tc-2026-q2`. Approved.
-2. The Redaction Sub-Agent runs. *"142 PHI fields stripped (regex floor + 18 LLM-detected semantic spans). Differential privacy noise applied to 5 numeric aggregates, ε=5.0 spent."* The signed envelope appears with a SHA-256 hash.
+2. The Redaction Sub-Agent runs. *"Over a hundred PHI fields stripped (regex floor + LLM-detected semantic spans). Differential privacy noise applied to 5 numeric aggregates, ε=5.0 spent."* The signed envelope appears with a SHA-256 hash.
 
 **The closer.** *"Frontier intelligence does not require a frontier datacenter. With Gemma 4, the smallest hospital in America can do what only the largest could yesterday — without surrendering a patient's right to be unknown."*
 

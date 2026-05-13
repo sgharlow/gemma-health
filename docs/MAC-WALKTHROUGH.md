@@ -137,8 +137,8 @@ cd ../web
 
 ```bash
 brew services start ollama
-ollama pull gemma4:e4b      # ~6 GB · primary chat + function calling + vision
-ollama pull gemma4:e2b      # ~2 GB · redaction sub-agent
+ollama pull gemma4:e4b      # ~9.6 GB · primary chat + function calling + vision
+ollama pull gemma4:e2b      # ~7.2 GB · redaction sub-agent
 ollama list
 ```
 

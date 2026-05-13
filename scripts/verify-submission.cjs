@@ -97,7 +97,7 @@ console.log("\n[4/5] Live demo URLs reachable + content sane");
   // of regression where a deploy 200s with a stale or broken page.
   const targets = [
     ["https://gemma-health.vercel.app/", "HealthPulse Edge"],
-    ["https://gemma-health.vercel.app/edge", "Run care-gap scan"],
+    ["https://gemma-health.vercel.app/edge", "Verify chain integrity"],
     ["https://gemma-health.vercel.app/api/health", "sovereignty"],
     ["https://gemma-health.vercel.app/api/ledger", null],
     ["https://gemma-health.vercel.app/cover", null],

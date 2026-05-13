@@ -90,7 +90,7 @@ Demo facility throughout: **DEMO-CAH-001, "Sage Mesa Critical Access Hospital", 
 >
 > She clicks Submit. Sovereignty Mode evaluates the policy. CMS is allowed — but only with a tribal council co-signature key. The system blocks the egress until she pastes the key.
 >
-> She does. The redaction sub-agent runs — regex floor plus a Gemma E-2-B semantic pass — and strips a hundred and forty-two PHI fields. Differential privacy noise gets applied to the numeric measures. The envelope is signed with a SHA-two-fifty-six hash that the hospital itself cannot retroactively forge.
+> She does. The redaction sub-agent runs — regex floor plus a Gemma E-2-B semantic pass — and strips over a hundred PHI fields. Differential privacy noise gets applied to the numeric measures. The envelope is signed with a SHA-two-fifty-six hash that the hospital itself cannot retroactively forge.
 >
 > CMS gets the aggregate. Marlene's patients get to stay anonymous. The tribal council gets a cryptographic receipt."
 
