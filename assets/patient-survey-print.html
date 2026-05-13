@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Patient Experience Survey — Sage Mesa CAH</title>
+<style>
+  @page { size: Letter; margin: 0.6in; }
+  html, body { margin: 0; padding: 0; font-family: "Times New Roman", Georgia, serif; color: #111; }
+  body { line-height: 1.45; font-size: 11pt; }
+  .sheet { max-width: 7.2in; margin: 0 auto; }
+  .hdr { border-bottom: 2px solid #111; padding-bottom: 6pt; margin-bottom: 14pt; }
+  .hdr h1 { margin: 0; font-size: 17pt; letter-spacing: 0.5pt; }
+  .hdr .sub { margin-top: 2pt; font-size: 10pt; color: #444; }
+  .meta { display: flex; gap: 18pt; margin: 10pt 0 14pt 0; font-size: 10pt; }
+  .meta .blk { flex: 1; }
+  .meta label { display: block; font-weight: bold; font-size: 9pt; letter-spacing: 0.3pt; text-transform: uppercase; color: #333; margin-bottom: 4pt; }
+  .meta .line { border-bottom: 1.2pt solid #000; height: 22pt; }
+  .intro { font-size: 10pt; color: #333; margin-bottom: 12pt; font-style: italic; }
+  h2 { font-size: 12pt; margin: 16pt 0 8pt 0; padding-bottom: 3pt; border-bottom: 1pt solid #999; }
+  .q { margin: 10pt 0; }
+  .qtext { margin-bottom: 4pt; }
+  .scale { display: flex; gap: 6pt; align-items: center; }
+  .scale .opt { display: inline-flex; align-items: center; gap: 4pt; font-size: 10pt; }
+  .scale .box { display: inline-block; width: 14pt; height: 14pt; border: 1.2pt solid #000; }
+  .scale .legend { margin-left: 12pt; font-size: 9pt; color: #555; }
+  .free { margin-top: 4pt; }
+  .free .lines { border: 1.2pt solid #000; height: 70pt; padding: 4pt 6pt; }
+  .footer { margin-top: 14pt; display: flex; justify-content: space-between; font-size: 9pt; color: #555; }
+  .footer .sigblock { width: 50%; }
+  .footer .siglabel { font-weight: bold; font-size: 9pt; }
+  .footer .sigline { border-bottom: 1.2pt solid #000; height: 22pt; margin-top: 16pt; }
+  .ack { margin-top: 18pt; font-size: 8.5pt; color: #555; border-top: 1pt dotted #999; padding-top: 6pt; }
+  @media screen {
+    body { background: #eee; padding: 24pt 0; }
+    .sheet { background: #fff; padding: 0.6in; box-shadow: 0 2px 12px rgba(0,0,0,0.1); }
+    .print-hint { max-width: 7.2in; margin: 0 auto 12pt; font-size: 11pt; color: #444; background: #fffbe6; border: 1px solid #f0d97a; padding: 8pt 12pt; border-radius: 4pt; }
+  }
+  @media print { .print-hint { display: none; } }
+</style>
+</head>
+<body>
+  <div class="print-hint">
+    Print this page (Cmd-P → "Save as PDF" or send to printer). Fill in the fields by hand,
+    then hold to the webcam for the multimodal capture demo. Composite hospital — for demo only.
+  </div>
+
+  <div class="sheet">
+    <div class="hdr">
+      <h1>Patient Experience Survey</h1>
+      <div class="sub">Sage Mesa Critical Access Hospital · Window Rock, AZ · Quality Improvement</div>
+    </div>
+
+    <p class="intro">
+      Your feedback helps us improve. Please return this survey to the front desk or to your
+      care team. Responses are confidential. We do not ask for your full name.
+    </p>
+
+    <div class="meta">
+      <div class="blk">
+        <label>Patient initials</label>
+        <div class="line"></div>
+      </div>
+      <div class="blk">
+        <label>Date of visit</label>
+        <div class="line"></div>
+      </div>
+      <div class="blk">
+        <label>Department</label>
+        <div class="line"></div>
+      </div>
+    </div>
+
+    <h2>Overall experience</h2>
+
+    <div class="q">
+      <div class="qtext"><strong>1.</strong> Overall, how would you rate your stay or visit today?</div>
+      <div class="scale">
+        <span class="opt"><span class="box"></span>1</span>
+        <span class="opt"><span class="box"></span>2</span>
+        <span class="opt"><span class="box"></span>3</span>
+        <span class="opt"><span class="box"></span>4</span>
+        <span class="opt"><span class="box"></span>5</span>
+        <span class="legend">1 = poor · 5 = excellent</span>
+      </div>
+    </div>
+
+    <div class="q">
+      <div class="qtext"><strong>2.</strong> How well did nurses communicate with you?</div>
+      <div class="scale">
+        <span class="opt"><span class="box"></span>1</span>
+        <span class="opt"><span class="box"></span>2</span>
+        <span class="opt"><span class="box"></span>3</span>
+        <span class="opt"><span class="box"></span>4</span>
+        <span class="opt"><span class="box"></span>5</span>
+      </div>
+    </div>
+
+    <div class="q">
+      <div class="qtext"><strong>3.</strong> How well did doctors and providers communicate with you?</div>
+      <div class="scale">
+        <span class="opt"><span class="box"></span>1</span>
+        <span class="opt"><span class="box"></span>2</span>
+        <span class="opt"><span class="box"></span>3</span>
+        <span class="opt"><span class="box"></span>4</span>
+        <span class="opt"><span class="box"></span>5</span>
+      </div>
+    </div>
+
+    <div class="q">
+      <div class="qtext"><strong>4.</strong> Was the facility clean and well-kept?</div>
+      <div class="scale">
+        <span class="opt"><span class="box"></span>1</span>
+        <span class="opt"><span class="box"></span>2</span>
+        <span class="opt"><span class="box"></span>3</span>
+        <span class="opt"><span class="box"></span>4</span>
+        <span class="opt"><span class="box"></span>5</span>
+      </div>
+    </div>
+
+    <div class="q">
+      <div class="qtext"><strong>5.</strong> Would you recommend this hospital to family or friends?</div>
+      <div class="scale">
+        <span class="opt"><span class="box"></span>1</span>
+        <span class="opt"><span class="box"></span>2</span>
+        <span class="opt"><span class="box"></span>3</span>
+        <span class="opt"><span class="box"></span>4</span>
+        <span class="opt"><span class="box"></span>5</span>
+      </div>
+    </div>
+
+    <h2>Comments (optional)</h2>
+    <div class="free">
+      <div class="lines"></div>
+    </div>
+
+    <div class="footer">
+      <div class="sigblock">
+        <div class="siglabel">Signature (optional)</div>
+        <div class="sigline"></div>
+      </div>
+      <div class="sigblock" style="text-align:right;">
+        <div class="siglabel">Today's date</div>
+        <div class="sigline"></div>
+      </div>
+    </div>
+
+    <div class="ack">
+      Sage Mesa Critical Access Hospital and the persona "Marlene Tsosie" used in the
+      HealthPulse Edge demonstration are composite — no actual hospital, IHS facility, or
+      healthcare worker is depicted. Survey design follows HCAHPS-style topic coverage for
+      demo realism only.
+    </div>
+  </div>
+</body>
+</html>
