@@ -1,6 +1,6 @@
 # HealthPulse Edge
 
-> Quality intelligence for the smallest hospitals in America — running entirely on a $400 mini-PC, with a cryptographic privacy guarantee even tribal data sovereignty laws can endorse.
+> Quality intelligence for the smallest hospitals in America — running entirely on a $400 mini-PC, with a cryptographic privacy receipt even tribal data sovereignty laws can endorse.
 >
 > **Built on Gemma 4 · Submitted to the Gemma 4 Good Hackathon**
 
