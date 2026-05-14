@@ -16,12 +16,8 @@ const fs = require("node:fs");
   try {
     ({ chromium } = require("playwright"));
   } catch {
-    try {
-      ({ chromium } = require("C:/Users/sghar/CascadeProjects/learningai/frontend/node_modules/playwright"));
-    } catch {
-      console.error("Playwright not installed. Run `npm install -D playwright` then `npx playwright install chromium`.");
-      process.exit(1);
-    }
+    console.error("Playwright not installed. Run `npm install -D playwright` then `npx playwright install chromium`.");
+    process.exit(1);
   }
   const port = process.env.PORT || 3000;
   const url = `http://localhost:${port}/cover`;

@@ -352,7 +352,7 @@ These three things you do yourself — they touch external services and need you
 **1. Make the GitHub repo public** (one command, reversible):
 
 ```bash
-cd C:/Users/sghar/CascadeProjects/gemma-health
+cd ~/Code/gemma-health
 gh auth status                                  # confirm logged in
 gh repo create sgharlow/gemma-health --public --source=. --remote=origin --push
 # OR if it exists already as private:
@@ -543,7 +543,7 @@ npm run dev
 # Line 10: replace "_replace with YouTube link_" with the actual URL.
 
 # 5. Run the verification script — must show 0 failures now
-cd C:/Users/sghar/CascadeProjects/gemma-health
+cd ~/Code/gemma-health
 node scripts/verify-submission.cjs
 
 # 6. Commit + push
