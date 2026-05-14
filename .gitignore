@@ -40,3 +40,4 @@ data/ledger/*.jsonl
 
 # Submission scratch
 .scratch/
+.video-rough/

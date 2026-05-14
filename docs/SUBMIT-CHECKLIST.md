@@ -87,6 +87,9 @@ cd ~/path/to/gemma-health
 git pull
 git status                                # MUST show clean
 cd web
+# IMPORTANT: stop `npm run dev` first if it's running — the dev server holds
+# a write lock on data/cms/hospital.duckdb and the tool tests will fail with
+# "Could not set lock on file" until you do.
 STUB_LLM_REDACTION=true npm run test      # MUST be 58/58
 
 # Live demo still up

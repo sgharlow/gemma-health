@@ -116,7 +116,7 @@ These appear in multiple places and have been verified to match across all docs:
 | Claim | Verified value |
 |---|---|
 | Number of US Critical Access Hospitals | 1,350 |
-| Number of vitest cases | 51 |
+| Number of vitest cases | 58 |
 | Mac Mini target hardware | $400 mini-PC |
 | MCP tools count | 6 |
 | Gemma 4 variants used | E2B (redaction), E4B (primary chat), 26B (optional batch) |

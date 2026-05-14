@@ -72,7 +72,7 @@ https://www.kaggle.com/competitions/gemma-4-good-hackathon/writeups/healthpulse-
 - Gemma 4 E2B in browser via MediaPipe LLM Inference + WebGPU
 - Next.js 16 + DuckDB + Laplace-mechanism differential privacy
 - 6-tool MCP function-calling layer
-- 51 vitest cases covering the load-bearing privacy machinery
+- 58 vitest cases covering the load-bearing privacy machinery
 
 #Gemma4 #Ollama #EdgeAI #HealthcareAI #PrivacyByDesign #IndigenousDataSovereignty #CARE #CMS #CriticalAccessHospital
 ```
