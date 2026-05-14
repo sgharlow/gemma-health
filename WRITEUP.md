@@ -44,7 +44,7 @@ A single mini-PC the hospital owns. It runs:
 - A **compliance ledger** (SHA-256 chain) that lets a regulator cryptographically verify no PHI left the box.
 - A **Sovereignty Mode** policy engine honoring CARE Principles for Indigenous Data Governance.
 
-A typical session: Marlene types *"Find the top 3 care gaps and tell me which one to tackle first."* Gemma fans out three function calls and returns a 2-sentence summary. She holds handwritten surveys to her webcam; Gemma 4 vision transcribes them to local FHIR. She clicks "Submit Q2 to CMS." Sovereignty Mode demands a co-signature key. The Redaction Sub-Agent runs (regex + Gemma E2B), DP noise (ε=1/aggregate) is applied, and a SHA-256-signed envelope is emitted. Ledger gains an entry: `phi_egress: true (signed)`.
+A typical session: Marlene types *"Find the top 3 care gaps."* Gemma fans out three function calls and returns a 2-sentence summary. She holds handwritten surveys to her webcam; Gemma 4 vision transcribes them to local FHIR. She clicks "Submit Q2 to CMS." Sovereignty Mode demands a co-signature key. The Redaction Sub-Agent runs (regex + Gemma E2B), DP noise (ε=1/aggregate) is applied, and a SHA-256-signed envelope is emitted. Ledger entry: `phi_egress: true (signed)`.
 
 The whole flow runs on a Mac Mini in Marlene's office, airplane mode on.
 
@@ -90,11 +90,11 @@ This is genuinely novel. Almost no commercial AI product honors Indigenous Data 
 
 The on-prem product runs entirely on Ollama — the most operationally honest path for hospitals without IT teams: `brew install ollama` and `ollama pull gemma4:e4b` is the entire bring-up. Three concrete uses:
 
-- **Primary chat + function calling** via `gemma4:e4b`, served at `http://localhost:11434`.
-- **Sidecar redaction** via a separate `gemma4:e2b` invocation. Two models, one runtime, no orchestration code.
+- **Primary chat + function calling** via `gemma4:e4b`.
+- **Sidecar redaction** via `gemma4:e2b`. Two models, one runtime, no orchestration code.
 - **Optional batch analysis** via `gemma4:26b` on machines with sufficient RAM, run on demand for nightly reports.
 
-A documented fallback chain (`gemma4:e4b` → `gemma4` → `gemma3:4b`) keeps the on-prem path resilient to tag drift. The adapter is ~150 lines of TypeScript, no vendor lock-in.
+A documented fallback chain (`gemma4:e4b` → `gemma4` → `gemma3:4b`) keeps the on-prem path resilient to tag drift.
 
 ---
 
@@ -122,7 +122,7 @@ Synthetic 150-facility seed (production swaps in CMS Hospital Compare). Every to
 
 ## What's next
 
-If we win or place, the prize funds a 6-month pilot at one opted-in CAH; the real CMS Hospital Compare ETL; a `litert-community` Gemma 4 26B for browsers; independent privacy-lawyer review; and a `gemma-health-policies` repo where tribal councils can fork the Sovereignty Mode template.
+If we win, the prize funds a 6-month pilot at one opted-in CAH; the real CMS Hospital Compare ETL; independent privacy-lawyer review; and a `gemma-health-policies` repo where tribal councils can fork the Sovereignty Mode template.
 
 If we don't, the repo stays open. The core insight — *edge AI is the first technology that lets under-resourced clinics participate in public-health intelligence without surrendering patient sovereignty* — is true regardless of who ships it first.
 

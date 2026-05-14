@@ -110,6 +110,24 @@ export default function Home() {
       </header>
 
       <main className="mx-auto flex max-w-4xl flex-col gap-8 px-6 py-10">
+        {/* Always server-rendered so judges who curl / view-source the page
+            still see the live-demo entry point. The conditional Ollama callout
+            below renders client-side once /api/health resolves. */}
+        <div className="rounded-lg border border-sky-200 bg-sky-50 p-3 text-xs dark:border-sky-900 dark:bg-sky-950">
+          <p className="text-sky-900 dark:text-sky-200">
+            <span className="font-semibold">In-browser live demo:</span>{" "}
+            <a href="/edge" className="underline font-medium">
+              gemma-health.vercel.app/edge
+            </a>{" "}
+            — Gemma 4 runs in WebGPU in your tab, no server needed, works offline. ·{" "}
+            <a
+              href="https://github.com/sgharlow/gemma-health"
+              className="underline font-medium"
+            >
+              Source on GitHub
+            </a>
+          </p>
+        </div>
         {health && !health.ollama.ok && (
           <div className="rounded-lg border border-sky-200 bg-sky-50 p-4 text-sm dark:border-sky-900 dark:bg-sky-950">
             <p className="font-semibold text-sky-900 dark:text-sky-200">

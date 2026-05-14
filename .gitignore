@@ -41,3 +41,8 @@ data/ledger/*.jsonl
 # Submission scratch
 .scratch/
 .video-rough/
+
+# Demo rough-cut intermediates — keep the MP4, ignore Playwright's WebM source
+# and the frame stills used to verify the recording.
+assets/recordings/*.webm
+assets/recordings/frame-*.png

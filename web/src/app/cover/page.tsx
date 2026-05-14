@@ -83,7 +83,7 @@ export default function CoverPage() {
           }}
         >
           Quality intelligence for the smallest hospitals in America — running
-          entirely on a $400 mini-PC, with a cryptographic privacy guarantee
+          entirely on a $400 mini-PC, with a cryptographic privacy receipt
           even tribal data sovereignty laws can endorse.
         </p>
       </div>

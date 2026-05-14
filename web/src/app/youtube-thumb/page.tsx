@@ -52,7 +52,7 @@ export default function YouTubeThumb() {
             marginBottom: 14,
           }}
         >
-          Gemma 4 Good Hackathon · Digital Equity · Ollama
+          Gemma 4 Good Hackathon · Digital Equity & Inclusivity · Ollama
         </div>
         <h1
           style={{

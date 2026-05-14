@@ -92,6 +92,17 @@ cd web
 # "Could not set lock on file" until you do.
 STUB_LLM_REDACTION=true npm run test      # MUST be 58/58
 
+# Gemma 4 reality check — DO THIS BEFORE RECORDING (B5 in the audit).
+# The voiceover claims "Gemma 4 specifically." If `ollama list` shows only
+# gemma3:*, the fallback chain runs Gemma 3 and the voiceover is unbacked.
+brew services start ollama
+ollama list                               # MUST show gemma4:e4b AND gemma4:e2b
+npm run dev &                             # bring the app up so /api/health can resolve
+sleep 5
+curl -s http://localhost:3000/api/health | jq '.ollama.resolved_primary_model, .ollama.resolved_redaction_model'
+#   MUST emit "gemma4:e4b" and "gemma4:e2b" (or some gemma4:* tag).
+#   If it says "gemma3:*", the recording cannot claim "Gemma 4 specifically".
+
 # Live demo still up
 node -e "['/','/edge','/cover','/cover-thumb','/api/health','/api/ledger'].forEach(p => fetch('https://gemma-health.vercel.app'+p).then(r => console.log(r.status, p)))"
 

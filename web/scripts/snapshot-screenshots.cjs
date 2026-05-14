@@ -4,16 +4,26 @@
  *
  * Captures (full-page, 1280x800 viewport, 2x DPI):
  *   1. screenshot-sovereignty-block.png — from PROD (https://gemma-health.vercel.app)
- *      Egress → CMS, blank signature → "Build envelope" → red REQUIRES SIGNATURE card
+ *      Egress → CMS, blank signature → "Submit Q2 to CMS" → red REQUIRES SIGNATURE card
  *   2. screenshot-edge.png — from LOCAL (http://localhost:3000/edge)
  *      Use simulated narrative → Load → Run scan → Verify chain → Offline → Run scan again
  *      Final state: green offline banner + populated ledger + streamed summary
  *   3. screenshot-onprem-home.png — from LOCAL (http://localhost:3000)
  *      Just the home page in its fresh state (post-deploy current UI)
  *
+ * IMPORTANT: use the production build, not the dev server. `npm run dev` adds
+ * the Next.js / Vercel "N" floating dev-mode indicator at the bottom-left of
+ * every page, which is visible in the screenshot. Run:
+ *   npm run build && npm run start
+ * The prod-built server runs on the same port 3000 but without the indicator.
+ *
+ * FRESH_LEDGER=true deletes data/ledger/ledger.jsonl before capturing the
+ * on-prem screenshot so the Compliance Ledger panel renders a clean 3-4
+ * entries instead of the 10+ accumulated from previous demo runs.
+ *
  * Usage:
- *   # Make sure `npm run dev` is up at port 3000 (for captures 2 + 3)
- *   node scripts/snapshot-screenshots.cjs
+ *   cd web && npm run build && npm run start &
+ *   FRESH_LEDGER=true node scripts/snapshot-screenshots.cjs
  */
 
 const path = require("node:path");
@@ -33,10 +43,10 @@ async function captureSovereigntyFromProd(browser) {
   const page = await ctx.newPage();
   await page.goto(PROD_URL, { waitUntil: "networkidle", timeout: 30000 });
 
-  // Destination defaults to CMS; signature defaults to blank. Just click Build envelope.
+  // Destination defaults to CMS; signature defaults to blank. Click the egress button.
   await page.locator("#egress-destination").selectOption("CMS");
   await page.locator("#egress-signature").fill("");
-  await page.getByRole("button", { name: "Build envelope" }).click();
+  await page.getByRole("button", { name: "Submit Q2 to CMS" }).click();
 
   // Wait for the red REQUIRES SIGNATURE card.
   await page.getByText("Sovereignty Mode REQUIRES SIGNATURE").waitFor({ timeout: 15000 });
@@ -120,6 +130,20 @@ async function captureOnPremHome(browser) {
   }
 
   fs.mkdirSync(ASSETS_DIR, { recursive: true });
+
+  // Optional fresh-ledger reset so the Compliance Ledger panel renders
+  // cleanly in the on-prem screenshot. Only runs if FRESH_LEDGER=true.
+  if (process.env.FRESH_LEDGER === "true") {
+    const ledgerPath = path.resolve(__dirname, "..", "..", "data", "ledger", "ledger.jsonl");
+    try {
+      if (fs.existsSync(ledgerPath)) {
+        fs.unlinkSync(ledgerPath);
+        console.log(`reset ledger at ${ledgerPath}`);
+      }
+    } catch (e) {
+      console.warn(`could not reset ledger: ${e.message}`);
+    }
+  }
 
   const browser = await chromium.launch({ headless: true });
 

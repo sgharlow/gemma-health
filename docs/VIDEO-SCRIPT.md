@@ -24,6 +24,8 @@ Demo facility throughout: **DEMO-CAH-001, "Sage Mesa Critical Access Hospital", 
 
 **On-screen:** `https://localhost:3000` — HealthPulse Edge home page, OFFLINE banner glowing emerald.
 
+**Mandatory proof-of-Gemma-4 shot (1.5 sec, B-roll over the cold open):** flash a Terminal window running `ollama list`. The list MUST show `gemma4:e4b` and `gemma4:e2b`. If it shows `gemma3:*` instead, the voiceover's "Gemma 4 specifically" claims are unbacked — STOP and either (a) wait for Gemma 4 to publish in Ollama, or (b) re-edit the voiceover to say "Gemma" not "Gemma 4."
+
 **Voiceover (~25 seconds):**
 > "There are 1,350 hospitals in the United States that have the same federal CMS reporting obligations as Mayo Clinic, but no IT department, no analytics team, and a tribal council policy that explicitly forbids patient data leaving the reservation.
 >
@@ -81,16 +83,16 @@ Demo facility throughout: **DEMO-CAH-001, "Sage Mesa Critical Access Hospital", 
 **On-screen action:**
 1. Sovereignty Mode is ON in the header (visible)
 2. Egress section: destination = `CMS`, signature key field empty
-3. Click "Build envelope" → red REQUIRES SIGNATURE card appears with the rationale
+3. Click "Submit Q2 to CMS" → red REQUIRES SIGNATURE card appears with the rationale
 4. Type `tc-2026-q2` into the signature field
-5. Click "Build envelope" again → signed envelope renders with: redactions count, LLM spans found, DP aggregates, envelope hash
+5. Click "Submit Q2 to CMS" again → signed envelope renders with: redactions count (will show > 100 — Gemma E2B takes ~30 sec to walk every field, cut the wait in post), LLM spans found, 5 DP aggregates (ε=5.0 total), envelope hash
 
 **Voiceover (~35 seconds):**
 > "It's quarter-end. CMS reporting is due.
 >
 > She clicks Submit. Sovereignty Mode evaluates the policy. CMS is allowed — but only with a tribal council co-signature key. The system blocks the egress until she pastes the key.
 >
-> She does. The redaction sub-agent runs — regex floor plus a Gemma E-2-B semantic pass — and strips over a hundred PHI fields. Differential privacy noise gets applied to the numeric measures. The envelope is signed with a SHA-two-fifty-six hash that the hospital itself cannot retroactively forge.
+> She does. The redaction sub-agent runs — regex floor plus a Gemma E-2-B semantic pass — and strips over a hundred PHI fields across the records and free-text. Differential privacy noise gets applied to all five numeric aggregates. Epsilon five-point-zero spent. The envelope is signed with a SHA-two-fifty-six hash that the hospital itself cannot retroactively forge.
 >
 > CMS gets the aggregate. Marlene's patients get to stay anonymous. The tribal council gets a cryptographic receipt."
 
@@ -118,7 +120,8 @@ Built on Gemma 4 · Submitted to the Gemma 4 Good Hackathon
 
 ## Pre-recording checklist (Mac, 30 minutes before rolling)
 
-- [ ] `ollama list` shows `gemma4:e4b` and `gemma4:e2b`
+- [ ] `ollama list` shows `gemma4:e4b` and `gemma4:e2b` — if it doesn't, **STOP** and re-record the voiceover to drop the "Gemma 4 specifically" claims. Also capture the `ollama list` output as a 1.5-sec B-roll insert over scene 1.
+- [ ] `curl -s http://localhost:3000/api/health | jq '.ollama.resolved_primary_model, .ollama.resolved_redaction_model'` returns gemma4:* tags actually used by the running app (not gemma3:* fallbacks)
 - [ ] `npm run dev` is running on http://localhost:3000
 - [ ] `STUB_VISION` and `STUB_LLM_REDACTION` are NOT set (real models)
 - [ ] Browser zoom set to 100%

@@ -38,7 +38,7 @@ Gemma 4 vision sees the form locally, transcribes it, adds it to local FHIR. PHI
 Quarter-end. CMS reporting is due. Sovereignty Mode demands a tribal council co-signature key.
 
 00:01:38.000 --> 00:01:48.000
-She pastes the key. Redaction sub-agent strips 142 PHI fields. Differential privacy noise applied.
+She pastes the key. Redaction sub-agent strips over a hundred PHI fields. Differential privacy noise applied to five aggregates.
 
 00:01:48.000 --> 00:01:58.000
 The envelope is signed with a SHA-256 hash the hospital itself cannot retroactively forge.

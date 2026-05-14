@@ -237,9 +237,9 @@ Print any handwritten note or sample patient survey.
 
 Confirm header toggle "Sovereignty Mode ON" is checked.
 
-1. Egress section: destination = `CMS`, leave signature blank → click "Build envelope"
+1. Egress section: destination = `CMS`, leave signature blank → click "Submit Q2 to CMS"
    - **Expect:** red **Sovereignty Mode REQUIRES SIGNATURE** card with rationale citing tribal council co-signature
-2. Type `tc-2026-q2` into signature field → click "Build envelope"
+2. Type `tc-2026-q2` into signature field → click "Submit Q2 to CMS"
    - **Expect:** signed envelope with `redaction: N fields stripped (regex caught N-M, LLM caught M extra)`, DP aggregates, lifetime ε in ledger
 3. Take a screenshot of the REQUIRES SIGNATURE state — this is `assets/screenshot-sovereignty-block.png`. Save and overwrite.
 
@@ -315,7 +315,7 @@ curl -s https://gemma-health.vercel.app/edge | grep -o "Verify chain integrity" 
 The screenshot you took in Phase 3.5 was from `localhost:3000`. For the Kaggle Media Gallery, the live URL version is more credible:
 
 1. Open https://gemma-health.vercel.app in Chrome
-2. Egress section: destination = `CMS`, signature blank → "Build envelope"
+2. Egress section: destination = `CMS`, signature blank → "Submit Q2 to CMS"
 3. REQUIRES SIGNATURE card appears
 4. DevTools → Cmd-Shift-P → Capture full size screenshot
 5. Save as `~/Code/gemma-health/assets/screenshot-sovereignty-block.png` (overwrite)

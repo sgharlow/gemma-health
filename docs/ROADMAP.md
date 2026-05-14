@@ -90,7 +90,7 @@ Implement hard enforcement of the cumulative privacy budget (ε) across egress s
 2. In `/api/egress`, before building the envelope, check `ledger.totalEpsilonSpent() + envelope_epsilon > policy.max_lifetime_epsilon`. If exceeded, return 403 with `{ error: "privacy_budget_exhausted", lifetime_spent: X, budget: Y }`.
 3. Add a `budget_reset_key_id` to the policy — the tribal council can authorize a budget reset for a new reporting period (analogous to the egress signature key).
 4. The ledger gains a `system` entry type for budget resets: `{ action: "system", notes: "privacy budget reset for Q3-2026", phi_egress: false }`.
-5. UI: the EgressButton shows remaining budget (e.g., "ε remaining: 8.0 / 10.0") before the user clicks "Build envelope."
+5. UI: the EgressButton shows remaining budget (e.g., "ε remaining: 8.0 / 10.0") before the user clicks "Submit Q2 to CMS."
 
 **Risks:**
 - The right budget cap is domain-specific. ε=10.0 per reporting period is a reasonable starting point but needs input from a privacy expert.
@@ -229,7 +229,7 @@ The BRIEF's video script describes this moment: *"Now and only now, the airplane
    - `Outbound requests: 0` (green) or `N requests made` (amber if any)
    - `Model: Gemma 4 E2B · running in WebGPU · this tab only`
    - `Ledger: N entries · SHA-256 chain · IndexedDB only`
-3. **The "egress moment"** — when the user clicks "Build envelope" (the egress button), the panel briefly shows `1 outbound request · redacted aggregate only` (amber), then returns to green. This makes the egress gate visible as a deliberate, controlled event rather than an invisible background process.
+3. **The "egress moment"** — when the user clicks "Submit Q2 to CMS" (the egress button), the panel briefly shows `1 outbound request · redacted aggregate only` (amber), then returns to green. This makes the egress gate visible as a deliberate, controlled event rather than an invisible background process.
 4. **Screenshot-ready layout** — the panel should be visually distinct (emerald border, monospace font) so a screenshot of it is immediately legible in a media gallery thumbnail.
 
 ### Timeline
@@ -322,7 +322,7 @@ Visiting `https://gemma-health.vercel.app/edge?walkthrough=true` starts the guid
 After every egress envelope is built, show a plain-English explainer panel that translates the technical output (redaction counts, DP aggregates, envelope hash) into a narrative that a non-technical judge can understand and remember. This is the submission's "closing argument" — the moment where the technical machinery is translated into human impact.
 
 ### Why this wins
-The egress flow is the submission's most technically sophisticated feature — two-layer redaction, Laplace DP, SHA-256 signing, Sovereignty Mode policy evaluation — but the current UI presents it as a wall of numbers. A judge who sees "142 PHI fields stripped · ε=2.0 · envelope hash: a3f7..." understands that something happened, but not *why it matters*. The explainer panel answers the question every judge is silently asking: "So what?"
+The egress flow is the submission's most technically sophisticated feature — two-layer redaction, Laplace DP, SHA-256 signing, Sovereignty Mode policy evaluation — but the current UI presents it as a wall of numbers. A judge who sees "130 PHI fields stripped · ε=5.0 · envelope hash: a3f7..." understands that something happened, but not *why it matters*. The explainer panel answers the question every judge is silently asking: "So what?"
 
 This directly addresses the "Impact & Relevance" scoring criterion (25%). The panel also gives the submission a quotable moment — a sentence that judges can write in their notes and that the video can end on.
 
