@@ -95,8 +95,8 @@ Wire it into your MCP host (Claude Desktop config snippet in [`mcp/README.md`](.
 On-prem app (Mac Mini)        ←→        Live demo (your browser)  ←→  MCP server (any host)
 ─────────────────────                    ──────────────────────────    ─────────────────────
 Next.js                                  Next.js (same code)            node mcp/server.js
-Ollama + Gemma 4 26B/E4B/E2B             MediaPipe LLM + Gemma 4 E2B    Caller's model (Claude, etc.)
-DuckDB (CMS data + FHIR)                 Static JSON (same data shape)  Same JSON
+Ollama + Gemma 4 E4B/E2B (+ optional 26B)  MediaPipe LLM + Gemma 4 E2B    Caller's model (Claude, etc.)
+DuckDB (CMS data, 150-facility seed)     Static JSON (same data shape)  Same JSON
 Node fs ledger (SHA-256)                 IndexedDB ledger (SHA-256)     (host owns its audit log)
 6 function-calling tools                 Same 6 tools                   Same 6 tools (over MCP stdio)
 ```

@@ -172,7 +172,7 @@ export default function ArchitecturePage() {
             </Card>
             <Arrow vertical />
             <Card title="Local Data" subtitle="Never leaves the box without going through the egress gate">
-              CMS quality data (DuckDB, ~200 MB) · synthetic FHIR (Synthea) · compliance ledger (append-only JSONL + SHA-256 chain)
+              CMS quality data (DuckDB, ~200 MB, 150-facility synthetic seed) · compliance ledger (append-only JSONL + SHA-256 chain)
             </Card>
           </div>
 

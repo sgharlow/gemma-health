@@ -99,13 +99,13 @@ A single mini-PC the hospital owns. It runs:
 
 - **Gemma 4 E4B / E2B** via **Ollama** for quality analysis and natural-language Q&A.
 - **Gemma 4 E2B** as a PHI redaction sidecar.
-- **DuckDB** holding CMS quality data + the hospital's FHIR exports.
+- **DuckDB** holding CMS quality data with a synthetic 150-facility seed.
 - **6 function-calling tools** — `facility_benchmark`, `quality_monitor`, `care_gap_finder`, `equity_detector`, `state_ranking`, `cross_cutting_analysis` — exposed as Ollama function calls AND as a Model Context Protocol (MCP) server in `mcp/` for Claude Desktop and other MCP hosts.
-- A **multimodal handler** that queues webcam captures of handwritten surveys for vision transcription into local FHIR.
+- A **multimodal handler** that processes webcam captures of handwritten surveys via Gemma 4 vision into structured extractions for review.
 - A **compliance ledger** (SHA-256 chain) that lets a regulator cryptographically verify what the model did and that no PHI left the box.
 - A **Sovereignty Mode** policy engine honoring CARE Principles for Indigenous Data Governance.
 
-**The workflow is batch-first.** Marlene queues her week's questions Monday evening. Overnight, Gemma fans them out across the 6 tools, writes results to the local FHIR store and the compliance ledger. Tuesday at 6:47 AM she opens the app, sees the **Morning Report** banner, reviews the recommendations, signs the pre-built CMS envelope. Submission goes out by 9 AM. The whole flow runs on a Mac Mini in her office, airplane mode on.
+**The workflow is batch-first.** Marlene queues her week's questions Monday evening. Overnight, Gemma fans them out across the 6 tools and appends every action to the compliance ledger. Tuesday at 6:47 AM she opens the app, sees the **Morning Report** banner, reviews the recommendations, signs the pre-built CMS envelope. Submission goes out by 9 AM. The whole flow runs on a Mac Mini in her office, airplane mode on.
 
 ---
 
@@ -113,11 +113,11 @@ A single mini-PC the hospital owns. It runs:
 
 Five properties of Gemma 4 are load-bearing:
 
-1. **Frontier reasoning at edge sizes.** Quality analysis is not "generate-text" — it's "interpret a benchmark, identify the most actionable intervention, cite a clinical bundle." Gemma 4 26B delivers this locally.
+1. **Frontier reasoning at edge sizes.** Quality analysis is not "generate-text" — it's "interpret a benchmark, identify the most actionable intervention, cite a clinical bundle." Gemma 4 E4B delivers this locally on a Mac Mini.
 2. **Native function calling** — for the 6 tools. No brittle ReAct prompting.
 3. **Multimodal vision** — table stakes for the webcam capture flow.
 4. **Open weights** — critical for compliance. A regulator can audit the running model version; a tribal council can verify it was not swapped for a data-exfiltrating clone. **You cannot do this with a closed model.**
-5. **E2B exists** — a 2 GB sidecar runs alongside the primary; without it, defense-in-depth redaction would need a second box.
+5. **E2B exists** — a small sidecar (~2 GB RAM) runs alongside the primary; without it, defense-in-depth redaction would need a second box.
 
 ---
 

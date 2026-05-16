@@ -115,7 +115,7 @@ export default function IntakeQueue() {
 
       <p className="mt-3 text-[11px] text-zinc-500">
         Reception drops paper surveys into the intake folder during the day. Overnight, Gemma 4
-        vision reads each one on-device; transcriptions land in the local FHIR store. Images
+        vision reads each one on-device; transcriptions are saved to the local extractions store. Images
         never leave this machine.
       </p>
     </section>
