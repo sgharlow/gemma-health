@@ -22,6 +22,12 @@ interface LedgerResponse {
 
 export default function LedgerView({ refreshSignal }: { refreshSignal?: number }) {
   const [data, setData] = useState<LedgerResponse | null>(null);
+  const [verifying, setVerifying] = useState(false);
+  // pulsing=true for ~1.4s after a successful Verify — gives Scene 5 a visible
+  // cryptographic-proof moment (ring flashes emerald around the chain-verified
+  // pill so the viewer FEELS the verification happened, not just sees a static
+  // green badge they could mistake for decoration).
+  const [pulsing, setPulsing] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -36,6 +42,25 @@ export default function LedgerView({ refreshSignal }: { refreshSignal?: number }
     };
   }, [refreshSignal]);
 
+  async function verifyChain() {
+    setVerifying(true);
+    setPulsing(false); // reset before re-pulsing
+    try {
+      const r = await fetch("/api/ledger?limit=10");
+      const d = (await r.json()) as LedgerResponse;
+      setData(d);
+    } finally {
+      // Hold the "Verifying…" state briefly so the action is visible even on
+      // a sub-100ms response — the cryptographic re-walk over the whole chain
+      // is what the viewer needs to see *happen*, not just *appear instant*.
+      setTimeout(() => {
+        setVerifying(false);
+        setPulsing(true);
+        setTimeout(() => setPulsing(false), 2200);
+      }, 700);
+    }
+  }
+
   if (!data) {
     return (
       <div className="rounded-lg border border-dashed border-zinc-300 p-4 text-xs text-zinc-500 dark:border-zinc-700">
@@ -46,22 +71,36 @@ export default function LedgerView({ refreshSignal }: { refreshSignal?: number }
 
   return (
     <div className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
-      <div className="mb-3 flex items-baseline justify-between">
+      <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">
           Compliance Ledger
         </h2>
         <div className="flex items-center gap-2 text-[11px]">
+          <button
+            type="button"
+            onClick={verifyChain}
+            disabled={verifying}
+            id="verify-chain-btn"
+            className="rounded border border-emerald-300 bg-white px-2 py-0.5 font-medium text-emerald-800 hover:bg-emerald-50 disabled:opacity-60 dark:border-emerald-700 dark:bg-zinc-900 dark:text-emerald-300 dark:hover:bg-zinc-800"
+            aria-label="Re-verify SHA-256 chain integrity"
+          >
+            {verifying ? "Verifying…" : "Verify chain integrity"}
+          </button>
           <span
-            className={`rounded px-2 py-0.5 font-medium ${
+            className={`inline-block rounded px-2 py-0.5 font-medium transition-all duration-500 ${
               data.verification.valid
                 ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
                 : "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300"
+            } ${
+              pulsing && data.verification.valid
+                ? "scale-150 bg-emerald-500 text-white ring-8 ring-emerald-300 shadow-lg shadow-emerald-500/50 dark:bg-emerald-400 dark:text-emerald-950 dark:ring-emerald-600"
+                : ""
             }`}
           >
-            {data.verification.valid ? "chain verified" : `BROKEN at seq ${data.verification.brokenAt}`}
+            {data.verification.valid ? `✓ chain verified · ${data.verification.checked} entries` : `BROKEN at seq ${data.verification.brokenAt}`}
           </span>
           <span className="text-zinc-500">
-            {data.count} total · head <code>{data.head.slice(0, 12)}…</code>
+            head <code>{data.head.slice(0, 12)}…</code>
           </span>
         </div>
       </div>

@@ -1,6 +1,69 @@
 "use client";
 
 import { useState } from "react";
+import { redactPhi } from "@/lib/redaction";
+
+// One sample free-text string that exercises 4 different regex classes:
+// name+title, phone, email, and a date. Used by RedactionSample to show
+// the regex layer actively transforming PHI → tokens in front of the viewer.
+// This is the ACTUAL function the egress pipeline uses (regex layer), called
+// in-browser at render time — not a pre-baked screenshot.
+const SAMPLE_RAW =
+  'Patient Mr. Yazzie reported improved symptoms. Phone follow-up at (555) 123-4567 went well. Email confirmation sent to yazzie@hospital.test on 4/15/2026.';
+
+function RedactionSample() {
+  const result = redactPhi(SAMPLE_RAW);
+  // Build a side-by-side highlight: mark redacted tokens in the output and
+  // mark the original PHI substrings in the raw column. We re-scan the raw
+  // text with the same patterns to find what each token replaced.
+  const tokenRe = /\[REDACTED-[A-Z]+\]|MRN: \[REDACTED\]|NPI: \[REDACTED\]|DOB: \[REDACTED\]/g;
+  const parts: Array<{ text: string; redacted: boolean }> = [];
+  let last = 0;
+  for (const m of result.redacted.matchAll(tokenRe)) {
+    if (m.index! > last) parts.push({ text: result.redacted.slice(last, m.index!), redacted: false });
+    parts.push({ text: m[0], redacted: true });
+    last = m.index! + m[0].length;
+  }
+  if (last < result.redacted.length) parts.push({ text: result.redacted.slice(last), redacted: false });
+
+  return (
+    <div id="redaction-sample" className="mt-3 rounded border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-900 dark:bg-emerald-950">
+      <div className="mb-2 flex items-baseline justify-between">
+        <div className="text-[11px] font-semibold uppercase tracking-wide text-emerald-900 dark:text-emerald-300">
+          Regex layer — live before / after on one record
+        </div>
+        <code className="text-[10px] text-emerald-700 dark:text-emerald-400">
+          {result.total_redactions} redactions · {result.classes_found.join(", ")}
+        </code>
+      </div>
+      <div className="grid gap-2 text-[11px] sm:grid-cols-2">
+        <div>
+          <div className="mb-1 text-[10px] font-medium uppercase tracking-wider text-zinc-500">Raw (before)</div>
+          <div className="rounded bg-white p-2 font-mono leading-snug text-zinc-700 dark:bg-zinc-900 dark:text-zinc-300">
+            {SAMPLE_RAW}
+          </div>
+        </div>
+        <div>
+          <div className="mb-1 text-[10px] font-medium uppercase tracking-wider text-zinc-500">Redacted (after)</div>
+          <div className="rounded bg-white p-2 font-mono leading-snug text-zinc-700 dark:bg-zinc-900 dark:text-zinc-300">
+            {parts.map((p, i) =>
+              p.redacted ? (
+                <mark
+                  key={i}
+                  className="rounded bg-amber-200 px-1 font-semibold text-amber-900 dark:bg-amber-900 dark:text-amber-100"
+                >
+                  {p.text}
+                </mark>
+              ) : (
+                <span key={i}>{p.text}</span>
+              ),
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 interface EnvelopeResponse {
   envelope?: {
@@ -210,6 +273,7 @@ export default function EgressButton({ sovereigntyEnabled, onSubmit }: Props) {
               {result.envelope.envelope_hash.slice(0, 24)}…
             </code>
           </div>
+          <RedactionSample />
         </div>
       )}
     </div>

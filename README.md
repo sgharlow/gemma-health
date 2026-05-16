@@ -1,13 +1,13 @@
 # HealthPulse Edge
 
-> Quality intelligence for Critical Access Hospitals — runs entirely on a $400 mini-PC with Gemma 4. No cloud, no PHI exfiltration, IDSov-aware.
+> Overnight Gemma 4 batch analytics for Critical Access Hospitals — runs entirely on a $400 mini-PC. Marlene queues her week's quality work Monday evening; the model processes it overnight; she reviews and signs in the morning. No cloud, no PHI exfiltration, IDSov-aware, every action in a cryptographic audit chain.
 >
 > **Submitted to:** [Gemma 4 Good Hackathon (Kaggle)](https://www.kaggle.com/competitions/gemma-4-good-hackathon)
 
 | | |
 |---|---|
 | **Live demo (in your browser)** | https://gemma-health.vercel.app/edge |
-| **Recorded demo video (≤3 min)** | _link added on submit_ |
+| **Recorded demo video (≤3 min)** | https://youtu.be/5hkNbITM5d4 |
 | **Submission writeup** | [`WRITEUP.md`](./WRITEUP.md) |
 | **Story / persona** | [`docs/STORY.md`](./docs/STORY.md) |
 | **Strategy brief** | [`BRIEF.md`](./BRIEF.md) |
@@ -15,15 +15,15 @@
 
 ## What this is
 
-A self-contained quality intelligence platform for the ~1,350 US Critical Access Hospitals. One overworked nurse-administrator can:
+A self-contained, **batch-first** quality intelligence platform for the ~1,350 US Critical Access Hospitals. The workflow is designed around the operational reality of compute-poor facilities — overnight runs on equipment the building already owns — not around a chatbot users sit at. One overworked nurse-administrator can:
 
-- Find care gaps and rank them by intervention leverage
-- Benchmark against peer CAHs in the same CMS region (150 synthetic facilities seed-included; production swaps in real CMS Hospital Compare)
-- Detect equity gaps between tribal and non-tribal cohorts
-- Digitize handwritten patient surveys via webcam
-- Produce CMS-submittable aggregates with cryptographic privacy proofs
+- **Queue** care-gap questions Monday evening; review ranked recommendations Tuesday morning
+- **Benchmark** against peer CAHs in the same CMS region (150 synthetic facilities seed-included; production swaps in real CMS Hospital Compare)
+- **Detect** equity gaps between tribal and non-tribal cohorts
+- **Capture** handwritten patient surveys via webcam — queued for vision transcription in the next batch
+- **Submit** CMS-submittable aggregates with cryptographic privacy proofs after a quick morning review-and-sign
 
-…all on a Mac Mini, with airplane mode on, with no cloud LLM in the loop.
+…all on a Mac Mini, with airplane mode on, with no cloud LLM in the loop, and every action recorded in an append-only SHA-256 ledger the hospital itself cannot retroactively forge.
 
 ## What's distinctive
 

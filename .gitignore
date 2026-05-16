@@ -42,7 +42,12 @@ data/ledger/*.jsonl
 .scratch/
 .video-rough/
 
-# Demo rough-cut intermediates — keep the MP4, ignore Playwright's WebM source
-# and the frame stills used to verify the recording.
+# Demo recording intermediates — keep healthpulse-edge-demo.mp4, ignore the
+# raw screen-capture takes (regenerable via scripts/record-take.sh) and the
+# dry voiceover input (already muxed into the final MP4).
 assets/recordings/*.webm
+assets/recordings/take-*.mov
+assets/recordings/voiceover-*.m4a
 assets/recordings/frame-*.png
+RESUME.md
+resume.md

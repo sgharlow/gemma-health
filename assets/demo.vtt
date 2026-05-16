@@ -1,56 +1,52 @@
 WEBVTT
 
 NOTE
-HealthPulse Edge — demo subtitles, target 2:30 cut.
-Adjust timestamps to your actual cut. Voice text aligns to docs/VIDEO-SCRIPT.md.
+HealthPulse Edge — captions for the final take (take-20260516-003037.mov, 99.77s).
+Voiceover text mirrors assets/voiceover-teleprompter.html SEGMENTS.
+Adjust timestamps to match the post-edit cut. Title-card cues are bracketed
+so a reader knows they describe on-screen text, not narration.
 
-00:00:00.000 --> 00:00:08.000
-1,350 hospitals in the US have the same federal CMS reporting obligations as Mayo Clinic.
+00:00:00.000 --> 00:00:04.000
+[Terminal — ollama list — gemma4:e4b and gemma4:e2b installed]
 
-00:00:08.000 --> 00:00:18.000
-No IT department. No analytics team. A tribal council policy that forbids patient data leaving the reservation.
+00:00:04.000 --> 00:00:07.000
+[Title — HealthPulse Edge · Quality intelligence for the smallest hospitals in America]
 
-00:00:18.000 --> 00:00:25.000
-This is one of them. Sage Mesa Critical Access Hospital, Window Rock, Arizona.
+00:00:07.000 --> 00:00:15.000
+1,350 hospitals carry Mayo Clinic's federal reporting obligations. No IT team. No analytics staff. No internet right now.
 
-00:00:25.000 --> 00:00:32.000
-Gemma 4 runs on the Mac Mini under the desk. There's no internet connection right now.
+00:00:15.000 --> 00:00:28.000
+Marlene runs quality at Sage Mesa Critical Access Hospital. Her overnight question — top three care gaps — was answered while the hospital slept. Gemma 4 ranked them. Recommendation: heart failure readmissions, excess ratio one-point-two-one.
 
-00:00:32.000 --> 00:00:40.000
-Marlene is the RN, the quality officer, and the EHR admin. Tuesdays she runs the federal reports.
+00:00:28.000 --> 00:00:39.000
+Last night's batch also processed patient surveys. Gemma 4 vision read this one on-device — initials, visit date, free-text. The image never left the building.
 
-00:00:40.000 --> 00:00:50.000
-She types: "find the top three care gaps." Gemma 4 fans out three function calls. Four seconds later:
+00:00:39.000 --> 00:00:42.000
+[Title — The policy gate · Sovereignty Mode · redaction · differential privacy · sign]
 
-00:00:50.000 --> 00:01:00.000
-"Your sepsis bundle compliance is the lowest in your CMS region. Refresh the bundle education. Audit antibiotic timing."
+00:00:42.000 --> 00:00:51.000
+Quarter-end. CMS reporting is due. Watch what the policy does. Sovereignty Mode off — the envelope sails through.
 
-00:01:00.000 --> 00:01:08.000
-Stanford-grade quality analytics. Four seconds. On a $400 box. Airplane mode on.
+00:00:51.000 --> 00:01:00.000
+Sovereignty Mode on — same submit, blocked. CMS needs the tribal council co-signature key. She pastes it.
 
-00:01:08.000 --> 00:01:18.000
-She has three weeks of handwritten patient experience surveys nobody has entered.
+00:01:00.000 --> 00:01:09.000
+The redaction sub-agent strips two hundred five PHI fields. Differential privacy on five aggregates. Epsilon five spent.
 
-00:01:18.000 --> 00:01:28.000
-Gemma 4 vision sees the form locally, transcribes it, adds it to local FHIR. PHI egress: false. Signed.
+00:01:09.000 --> 00:01:13.000
+Here it is on a single record — every PHI substring becomes a token before anything leaves the building.
 
-00:01:28.000 --> 00:01:38.000
-Quarter-end. CMS reporting is due. Sovereignty Mode demands a tribal council co-signature key.
+00:01:13.000 --> 00:01:16.000
+[Title — Cryptographic audit trail · Every action logged to a SHA-256 chain the hospital cannot forge]
 
-00:01:38.000 --> 00:01:48.000
-She pastes the key. Redaction sub-agent strips over a hundred PHI fields. Differential privacy noise applied to five aggregates.
+00:01:16.000 --> 00:01:23.000
+Every tool call, every redaction, every egress — appended to a SHA-256 chain. Click verify. Six entries confirmed.
 
-00:01:48.000 --> 00:01:58.000
-The envelope is signed with a SHA-256 hash the hospital itself cannot retroactively forge.
+00:01:23.000 --> 00:01:26.000
+[Title — Same product, in your browser · Gemma 4 runs in WebGPU · no server · works offline]
 
-00:01:58.000 --> 00:02:08.000
-CMS gets the aggregate. The patients get to stay anonymous. The tribal council gets a cryptographic receipt.
+00:01:26.000 --> 00:01:35.000
+The whole product also runs in your browser. WebGPU loads Gemma 4 once — then offline. Same tools, same ledger, same proof.
 
-00:02:08.000 --> 00:02:18.000
-Frontier intelligence does not require a frontier datacenter.
-
-00:02:18.000 --> 00:02:28.000
-With Gemma 4, the smallest hospital in America can do what only the largest could yesterday.
-
-00:02:28.000 --> 00:02:30.000
-HealthPulse Edge. github.com/sgharlow/gemma-health.
+00:01:35.000 --> 00:01:39.770
+[Title — HealthPulse Edge · gemma-health.vercel.app/edge · github.com/sgharlow/gemma-health · Built on Gemma 4]

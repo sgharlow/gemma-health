@@ -1,13 +1,13 @@
 # HealthPulse Edge
 
-> Quality intelligence for the smallest hospitals in America — running entirely on a $400 mini-PC, with a cryptographic privacy receipt even tribal data sovereignty laws can endorse.
+> Overnight Gemma 4 batch analytics for the smallest hospitals in America — running entirely on a $400 mini-PC, with a cryptographic privacy receipt for every action even tribal data sovereignty laws can endorse.
 >
 > **Built on Gemma 4 · Submitted to the Gemma 4 Good Hackathon**
 
 | | |
 |---|---|
 | **Live demo (in your browser)** | https://gemma-health.vercel.app/edge |
-| **Recorded demo video** | _replace with YouTube link_ |
+| **Recorded demo video** | https://youtu.be/5hkNbITM5d4 |
 | **Code repository** | https://github.com/sgharlow/gemma-health |
 | **Writeup track** | Digital Equity & Inclusivity |
 | **Special Technology Track** | Ollama |
@@ -16,19 +16,21 @@
 
 ## The 30-second pitch
 
-A 25-bed hospital on tribal land has the same federal CMS reporting obligations as Mayo Clinic, but no IT team, intermittent connectivity, and a tribal-council policy that forbids patient data leaving the reservation.
+A 25-bed hospital on tribal land has the same federal CMS reporting obligations as Mayo Clinic, but no IT team, intermittent connectivity, and a tribal-council policy that forbids patient data leaving the reservation. It has one nurse-administrator with forty-five minutes between rounds and the morning huddle.
 
-**HealthPulse Edge** is a $400 mini-PC running Gemma 4 entirely on-device via Ollama. It turns a single overworked nurse-administrator into a one-person quality intelligence team — care gaps, peer benchmarks, CMS submissions, handwritten survey OCR — and *never sends a byte of patient data anywhere*.
+**HealthPulse Edge** is a $400 mini-PC under her desk. Between midnight and 6 AM it runs Gemma 4 against the week's queued questions and scanned surveys, locally, building offline. Marlene reviews, signs with the tribal council key, submits. Every action — every tool call, PHI redaction, DP noise injection — is in an append-only SHA-256 ledger she cannot retroactively forge.
 
-Not "doctor in your pocket." This is **closing the analytics equity gap** between resourced urban systems and the 1,350 Critical Access Hospitals serving rural and tribal America — without compromising patient sovereignty.
+Not "doctor in your pocket." This is **closing the analytics equity gap** between resourced urban systems and the 1,350 Critical Access Hospitals serving rural and tribal America, by matching how compute-poor facilities *actually* operate: overnight batch on equipment they already own, with a cryptographic record of what ran while no one was watching.
 
 ---
 
 ## The problem
 
-Every hospital in the US, including a 17-bed CAH in Lake City, Colorado, must report quality data to CMS quarterly. Mayo has analytics teams of 200. The median CAH has Marlene — an RN who is also the quality coordinator on Tuesdays and the EHR admin when nobody else is around.
+Every US hospital reports quality data to CMS quarterly. Mayo has analytics teams of 200. The median CAH has Marlene — an RN who is also the quality coordinator and the EHR admin. She does not have a colleague who sits at a chatbot.
 
-Marlene's three options today: Excel (slow, no benchmarking); a $40-80k/year consultancy (unaffordable); or a cloud LLM with PHI (often illegal — no BAA, IDSov violation, 42 CFR Part 2 issues). Every option fails some combination of speed, cost, privacy, and connectivity. The system is built to fail her.
+Marlene's three options today: Excel (slow, no benchmarking); a $40-80k/year consultancy (unaffordable); or a cloud LLM with PHI (often illegal — no BAA, IDSov violation, 42 CFR Part 2 issues). Every option fails some combination of speed, cost, privacy, and connectivity.
+
+She also doesn't have analyst hours. She has *batch windows* — overnight, between shifts. Tools designed for interactive analyst use don't fit her shape of time. The product needs to look like a job queue, not a chatbot.
 
 ---
 
@@ -36,17 +38,15 @@ Marlene's three options today: Excel (slow, no benchmarking); a $40-80k/year con
 
 A single mini-PC the hospital owns. It runs:
 
-- **Gemma 4 26B / E4B** via **Ollama** for quality analysis and natural-language Q&A.
+- **Gemma 4 E4B / E2B** via **Ollama** for quality analysis and natural-language Q&A.
 - **Gemma 4 E2B** as a PHI redaction sidecar.
 - **DuckDB** holding CMS quality data + the hospital's FHIR exports.
 - **6 function-calling tools** — `facility_benchmark`, `quality_monitor`, `care_gap_finder`, `equity_detector`, `state_ranking`, `cross_cutting_analysis` — exposed as Ollama function calls AND as a Model Context Protocol (MCP) server in `mcp/` for Claude Desktop and other MCP hosts.
-- A **multimodal handler** that turns webcam captures of handwritten surveys into structured FHIR.
-- A **compliance ledger** (SHA-256 chain) that lets a regulator cryptographically verify no PHI left the box.
+- A **multimodal handler** that queues webcam captures of handwritten surveys for vision transcription into local FHIR.
+- A **compliance ledger** (SHA-256 chain) that lets a regulator cryptographically verify what the model did and that no PHI left the box.
 - A **Sovereignty Mode** policy engine honoring CARE Principles for Indigenous Data Governance.
 
-A typical session: Marlene types *"Find the top 3 care gaps."* Gemma fans out three function calls and returns a 2-sentence summary. She holds handwritten surveys to her webcam; Gemma 4 vision transcribes them to local FHIR. She clicks "Submit Q2 to CMS." Sovereignty Mode demands a co-signature key. The Redaction Sub-Agent runs (regex + Gemma E2B), DP noise (ε=1/aggregate) is applied, and a SHA-256-signed envelope is emitted. Ledger entry: `phi_egress: true (signed)`.
-
-The whole flow runs on a Mac Mini in Marlene's office, airplane mode on.
+**The workflow is batch-first.** Marlene queues her week's questions Monday evening. Overnight, Gemma fans them out across the 6 tools, writes results to the local FHIR store and the compliance ledger. Tuesday at 6:47 AM she opens the app, sees the **Morning Report** banner, reviews the recommendations, signs the pre-built CMS envelope. Submission goes out by 9 AM. The whole flow runs on a Mac Mini in her office, airplane mode on.
 
 ---
 
@@ -108,11 +108,11 @@ This is not staged. The model and the tool layer and the compliance ledger all r
 
 ## What this submission deliberately does NOT try to do
 
-- **Diagnose patients.** This is administrative AI, not clinical AI. Avoids FDA territory.
-- **Replace doctors.** Marlene is the user. Output is intelligence for her, not for a patient.
-- **Win on raw model performance.** The story is sovereignty + edge + equity. The model is the enabler, not the hero.
-- **Claim production HIPAA certification.** Architecture is designed to satisfy HIPAA, 42 CFR Part 2, and CARE Principles. No formal certification has been done.
-- **Speak for any tribal nation.** All personas and CAH facilities are composite. We cite the CARE Principles framework; we do not claim endorsement.
+- **Diagnose patients.** Administrative AI, not clinical. Avoids FDA territory.
+- **Replace doctors.** Marlene is the user; output is intelligence for her.
+- **Win on raw model performance.** Story is sovereignty + edge + equity; the model is the enabler, not the hero.
+- **Claim HIPAA certification.** Architecture is aligned with HIPAA, 42 CFR Part 2, and CARE Principles. No formal certification has been done.
+- **Speak for any tribal nation.** All personas and facilities are composite. We cite the CARE Principles framework; we do not claim endorsement.
 
 ---
 
@@ -130,7 +130,7 @@ If we don't, the repo stays open. The core insight — *edge AI is the first tec
 
 ## Test coverage + reproducibility
 
-58 vitest cases covering the load-bearing privacy machinery: SHA-256 hash chain integrity, tamper detection, missing-entry detection, regex PHI patterns, Laplace mechanism noise variance, Sovereignty Mode decision paths (including in-bundle policy parity with the canonical JSON), deep-redaction integration, egress envelope build, and a full integration test of `/api/egress` against the route handler. All green. TypeScript clean. `npm run build` clean. Apache-2.0 licensed (with explicit CC-BY-4.0 grant for prize-winning use, per contest rules).
+58 vitest cases covering the load-bearing privacy machinery: SHA-256 chain integrity, tamper detection, regex PHI patterns, Laplace noise variance, Sovereignty Mode decision paths, deep-redaction integration, egress envelope build, and `/api/egress` route-handler integration. All green. TypeScript and `npm run build` clean. Apache-2.0 licensed (with CC-BY-4.0 grant for prize-winning use, per contest rules).
 
 ---
 

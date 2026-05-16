@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>HealthPulse Edge — Voiceover Teleprompter (final take)</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #0b1220; color: #e5e7eb; }
+  .app { display: grid; grid-template-rows: auto 1fr auto; height: 100vh; }
+  header { padding: 12px 22px; background: #111827; border-bottom: 1px solid #1f2937; display: flex; align-items: center; gap: 16px; }
+  header h1 { margin: 0; font-size: 15px; font-weight: 600; flex: 1; }
+  header .target { font-size: 12px; color: #9ca3af; font-family: ui-monospace, Menlo, monospace; }
+  header .mode-toggle { display: flex; gap: 4px; background: #1f2937; border-radius: 6px; padding: 3px; }
+  header .mode-toggle button { background: transparent; color: #9ca3af; border: none; padding: 6px 12px; font-size: 12px; font-weight: 600; border-radius: 4px; cursor: pointer; font-family: inherit; }
+  header .mode-toggle button.active { background: #10b981; color: #062420; }
+
+  main { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(320px, 1fr); gap: 14px; padding: 14px; overflow: hidden; }
+  .pane { background: #0f172a; border: 1px solid #1f2937; border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; }
+  .pane h2 { margin: 0; padding: 9px 14px; background: #111827; border-bottom: 1px solid #1f2937; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: #9ca3af; display: flex; justify-content: space-between; align-items: center; }
+
+  #video-pane { background: #000; }
+  #video-pane video { width: 100%; height: 100%; object-fit: contain; background: #000; }
+
+  #script-pane { overflow-y: auto; }
+  #script { padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+  .seg { background: #0f172a; border: 1px solid #1f2937; border-radius: 6px; padding: 12px 14px; transition: all 200ms ease; cursor: pointer; }
+  .seg.active { border-color: #10b981; background: #0a1f1a; box-shadow: 0 0 0 1px #10b981, 0 4px 16px rgba(16, 185, 129, 0.2); }
+  .seg.silent { background: #131825; border-style: dashed; }
+  .seg.silent .seg-text { color: #6b7280; font-style: italic; }
+  .seg-meta { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+  .seg-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #94a3b8; }
+  .seg.active .seg-label { color: #6ee7b7; }
+  .seg-time { font-size: 10px; color: #6b7280; font-family: ui-monospace, Menlo, monospace; }
+  .seg-text { font-size: 15px; line-height: 1.5; color: #e5e7eb; white-space: pre-wrap; }
+  .seg-words { margin-top: 6px; font-size: 10px; color: #6b7280; font-family: ui-monospace, Menlo, monospace; }
+
+  footer { background: #111827; border-top: 1px solid #1f2937; padding: 11px 22px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  footer label { font-size: 12px; color: #9ca3af; }
+  .speed-group { display: flex; align-items: center; gap: 8px; padding: 4px 10px; background: #1f2937; border-radius: 6px; }
+  .speed-group label { font-size: 11px; color: #9ca3af; font-weight: 600; }
+  .speed-group input[type=range] { width: 110px; accent-color: #10b981; }
+  .speed-group .val { font-size: 12px; color: #6ee7b7; font-family: ui-monospace, Menlo, monospace; min-width: 56px; text-align: right; }
+  .countdown-overlay {
+    position: fixed; inset: 0; z-index: 99999;
+    background: rgba(11, 18, 32, 0.94);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    color: white; gap: 18px;
+    opacity: 0; transition: opacity 200ms;
+    pointer-events: none;
+  }
+  .countdown-overlay.show { opacity: 1; pointer-events: auto; }
+  .countdown-overlay .num { font-size: 160pt; font-weight: 700; line-height: 1; color: #10b981; }
+  .countdown-overlay .hint { font-size: 16pt; color: #94a3b8; }
+  #scene-select { background: #1f2937; color: #e5e7eb; border: 1px solid #374151; border-radius: 6px; padding: 7px 11px; font-size: 13px; font-family: inherit; max-width: 320px; }
+  button { background: #10b981; color: #062420; border: none; border-radius: 6px; padding: 8px 18px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
+  button:hover:not(:disabled) { background: #34d399; }
+  button:disabled { background: #374151; color: #6b7280; cursor: not-allowed; }
+  button.danger { background: #ef4444; color: white; }
+  button.danger:hover { background: #f87171; }
+  button.ghost { background: transparent; color: #9ca3af; border: 1px solid #374151; }
+  button.ghost:hover { background: #1f2937; color: #e5e7eb; }
+  .progress-wrap { flex: 1; height: 6px; background: #1f2937; border-radius: 3px; overflow: hidden; min-width: 140px; }
+  .progress { height: 100%; width: 0; background: linear-gradient(90deg, #10b981, #34d399); transition: width 0.1s linear; }
+  #status { font-size: 12px; color: #9ca3af; font-family: ui-monospace, Menlo, monospace; min-width: 90px; text-align: right; }
+  .recording { color: #fca5a5 !important; }
+  .done { color: #6ee7b7 !important; }
+
+  #files { padding: 8px 22px 11px; font-size: 11px; color: #9ca3af; background: #0b1220; }
+  #files .file { display: inline-block; margin-right: 9px; padding: 2px 7px; background: #1f2937; border-radius: 3px; color: #d1d5db; }
+  #files .file.recorded { background: #064e3b; color: #6ee7b7; }
+  .hint { padding: 7px 14px; background: #1e293b; border-top: 1px solid #1f2937; font-size: 11px; color: #94a3b8; }
+  .hint code { background: rgba(255,255,255,0.05); padding: 1px 5px; border-radius: 3px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>HealthPulse Edge — Voiceover Teleprompter</h1>
+    <span class="target" id="target-label">final take · 99.77s · 11 segments</span>
+    <div class="mode-toggle">
+      <button id="mode-watchalong" class="active" data-mode="watchalong">Watch-along</button>
+      <button id="mode-record" data-mode="record">Per-scene record</button>
+    </div>
+  </header>
+
+  <main>
+    <section id="video-pane" class="pane">
+      <h2><span>Video preview <span id="video-mode-label">(muted)</span></span><span id="time-label" style="font-family:ui-monospace,Menlo,monospace;color:#6b7280;">0:00 / 0:00</span></h2>
+      <video id="preview" src="recordings/take-20260516-003037.mov" muted playsinline preload="auto"></video>
+    </section>
+    <section id="script-pane" class="pane">
+      <h2><span>Script — current segment highlights as video plays</span><span id="seg-counter" style="font-family:ui-monospace,Menlo,monospace;color:#6b7280;">— / 11</span></h2>
+      <div id="script"></div>
+    </section>
+  </main>
+
+  <footer id="footer-watchalong">
+    <button id="playall-btn">▶ Play with 3-2-1 countdown</button>
+    <button id="playnow-btn" class="ghost">▶ Play now</button>
+    <button id="pauseall-btn" class="ghost" disabled>Pause</button>
+    <button id="restart-btn" class="ghost">Restart</button>
+    <div class="speed-group">
+      <label for="speed">Speed</label>
+      <input type="range" id="speed" min="0.70" max="1.00" step="0.05" value="1.00">
+      <span class="val" id="speed-val">1.00× · 1:39.8</span>
+    </div>
+    <div class="progress-wrap"><div class="progress" id="progress"></div></div>
+    <div id="status">idle</div>
+  </footer>
+
+  <div id="countdown" class="countdown-overlay">
+    <div class="num" id="countdown-num">3</div>
+    <div class="hint">Hit RECORD on your audio app now</div>
+  </div>
+
+  <footer id="footer-record" style="display:none;">
+    <label for="scene-select">Segment:</label>
+    <select id="scene-select"></select>
+    <button id="start-btn">Start Recording</button>
+    <button id="stop-btn" class="danger" disabled>Stop / Re-record</button>
+    <div class="progress-wrap"><div class="progress" id="progress-rec" style="background: linear-gradient(90deg,#ef4444,#f87171);"></div></div>
+    <div id="rec-status" style="font-size:12px;color:#9ca3af;font-family:ui-monospace,Menlo,monospace;min-width:90px;text-align:right;">idle</div>
+  </footer>
+
+  <div id="files"></div>
+  <div class="hint">
+    <strong>Single-file voiceover workflow:</strong> drop video speed to a pace you can read at (slider above). Hit <code>▶ Play with 3-2-1 countdown</code>. During the countdown, start recording in your audio app. Read each highlighted segment as the video reaches it; stay silent on title cards (the dashed cards). When the video ends, stop your audio recording, send the file. The editor will sync it to the video at whatever final playback speed you used. Open this page in Chrome/Edge for best <code>.mov</code> playback.
+  </div>
+</div>
+
+<script>
+// ────────────────────────────────────────────────────────────────────────
+// Segment data — aligned to take-20260516-003037.mov (99.77 sec)
+//
+// Timestamps verified by frame-sampling the .mov at transition boundaries
+// (frames around each title-card fade-in/-out). Refine if the post-edit cut
+// shifts boundaries — every segment's start/end is the only thing that has
+// to change.
+// ────────────────────────────────────────────────────────────────────────
+const SEGMENTS = [
+  {
+    id: 0, label: "B-ROLL — ollama list",
+    start: 0.0, end: 4.0,
+    silent: true,
+    text: "(silent — the Terminal B-roll proves Gemma 4 is real: `gemma4:e4b` and `gemma4:e2b` on screen. No voiceover; let the visual breathe.)",
+  },
+  {
+    id: 1, label: "TITLE — HealthPulse Edge",
+    start: 4.0, end: 7.0,
+    silent: true,
+    text: "(silent — opening title card. 'HealthPulse Edge / Quality intelligence for the smallest hospitals in America' is on screen. No voiceover.)",
+  },
+  {
+    id: 2, label: "SCENE 1 — Cold open (OFFLINE)",
+    start: 7.0, end: 15.0,
+    text: "1,350 hospitals carry Mayo Clinic's federal reporting obligations. No IT team. No analytics staff. No internet right now.",
+  },
+  {
+    id: 3, label: "SCENE 2 — Morning Report",
+    start: 15.0, end: 28.0,
+    text: "Marlene runs quality at Sage Mesa Critical Access Hospital. Her overnight question — top three care gaps — was answered while the hospital slept. Gemma 4 ranked them. Recommendation: heart failure readmissions, excess ratio one-point-two-one.",
+  },
+  {
+    id: 4, label: "SCENE 3 — Intake batch",
+    start: 28.0, end: 39.0,
+    text: "Last night's batch also processed patient surveys. Gemma 4 vision read this one on-device — initials, visit date, free-text. The image never left the building.",
+  },
+  {
+    id: 5, label: "TITLE — The policy gate",
+    start: 39.0, end: 42.0,
+    silent: true,
+    text: "(silent — title card 'The policy gate / Sovereignty Mode · redaction · differential privacy · sign'. No voiceover.)",
+  },
+  {
+    id: 6, label: "SCENE 4 — Sovereignty + signed envelope",
+    start: 42.0, end: 73.0,
+    text: "Quarter-end. CMS reporting is due. Watch what the policy does. Sovereignty Mode off — the envelope sails through. Sovereignty Mode on — same submit, blocked. CMS needs the tribal council co-signature key. She pastes it. The redaction sub-agent strips two hundred five PHI fields. Differential privacy on five aggregates. Epsilon five spent. Here it is on a single record — every PHI substring becomes a token before anything leaves the building.",
+  },
+  {
+    id: 7, label: "TITLE — Cryptographic audit trail",
+    start: 73.0, end: 76.0,
+    silent: true,
+    text: "(silent — title card 'Cryptographic audit trail / Every action logged to a SHA-256 chain the hospital cannot forge'. No voiceover.)",
+  },
+  {
+    id: 8, label: "SCENE 5 — Compliance Ledger verify",
+    start: 76.0, end: 83.0,
+    text: "Every tool call, every redaction, every egress — appended to a SHA-256 chain. Click verify. Six entries confirmed.",
+  },
+  {
+    id: 9, label: "TITLE — Same product, in your browser",
+    start: 83.0, end: 86.0,
+    silent: true,
+    text: "(silent — title card 'Same product, in your browser / Gemma 4 runs in WebGPU · no server · works offline'. No voiceover.)",
+  },
+  {
+    id: 10, label: "SCENE 6 — /edge cameo",
+    start: 86.0, end: 95.0,
+    text: "The whole product also runs in your browser. WebGPU loads Gemma 4 once — then offline. Same tools, same ledger, same proof.",
+  },
+  {
+    id: 11, label: "CLOSING TITLE",
+    start: 95.0, end: 99.77,
+    silent: true,
+    text: "(silent — closing title card with the URLs and 'Built on Gemma 4 · Submitted to the Gemma 4 Good Hackathon'. No voiceover.)",
+  },
+];
+
+// ────────────────────────────────────────────────────────────────────────
+// Render segment list (the teleprompter cards)
+// ────────────────────────────────────────────────────────────────────────
+const scriptEl = document.getElementById("script");
+const segCounter = document.getElementById("seg-counter");
+const segEls = new Map();
+
+function renderSegments() {
+  scriptEl.innerHTML = "";
+  segCounter.textContent = `— / ${SEGMENTS.length}`;
+  SEGMENTS.forEach((s) => {
+    const div = document.createElement("div");
+    div.className = "seg" + (s.silent ? " silent" : "");
+    div.dataset.segId = s.id;
+    const words = s.silent ? 0 : s.text.split(/\s+/).filter(Boolean).length;
+    const dur = (s.end - s.start).toFixed(1);
+    div.innerHTML = `
+      <div class="seg-meta">
+        <span class="seg-label">${s.label}</span>
+        <span class="seg-time">${fmtTime(s.start)} → ${fmtTime(s.end)} (${dur}s)</span>
+      </div>
+      <div class="seg-text">${s.text}</div>
+      ${s.silent ? "" : `<div class="seg-words">${words} words · ~${(words / (s.end - s.start)).toFixed(1)} w/s · ~${Math.round((words / (s.end - s.start)) * 60)} wpm</div>`}
+    `;
+    div.addEventListener("click", () => {
+      const v = document.getElementById("preview");
+      v.currentTime = s.start;
+      if (currentMode === "record") {
+        document.getElementById("scene-select").value = s.id;
+      }
+    });
+    scriptEl.appendChild(div);
+    segEls.set(s.id, div);
+  });
+}
+
+function fmtTime(secs) {
+  const m = Math.floor(secs / 60);
+  const s = (secs % 60).toFixed(1).padStart(4, "0");
+  return `${m}:${s}`;
+}
+
+let lastActiveId = null;
+function highlightActive(t) {
+  const seg = SEGMENTS.find((s) => t >= s.start && t < s.end) ?? SEGMENTS[SEGMENTS.length - 1];
+  if (seg.id !== lastActiveId) {
+    if (lastActiveId !== null) segEls.get(lastActiveId)?.classList.remove("active");
+    segEls.get(seg.id)?.classList.add("active");
+    segEls.get(seg.id)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    lastActiveId = seg.id;
+    segCounter.textContent = `${seg.id + 1} / ${SEGMENTS.length}`;
+  }
+}
+
+// Populate the per-scene record dropdown
+const sceneSelect = document.getElementById("scene-select");
+SEGMENTS.forEach((s) => {
+  const opt = document.createElement("option");
+  opt.value = s.id;
+  opt.textContent = `${s.id + 1}. ${s.label} — ${(s.end - s.start).toFixed(1)}s${s.silent ? " (silent)" : ""}`;
+  sceneSelect.appendChild(opt);
+});
+
+// ────────────────────────────────────────────────────────────────────────
+// Mode toggle (watch-along vs per-scene record)
+// ────────────────────────────────────────────────────────────────────────
+let currentMode = "watchalong";
+const footerWatch = document.getElementById("footer-watchalong");
+const footerRec = document.getElementById("footer-record");
+const videoModeLabel = document.getElementById("video-mode-label");
+
+document.querySelectorAll(".mode-toggle button").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".mode-toggle button").forEach((b) => b.classList.remove("active"));
+    btn.classList.add("active");
+    currentMode = btn.dataset.mode;
+    if (currentMode === "watchalong") {
+      footerWatch.style.display = "flex";
+      footerRec.style.display = "none";
+      videoModeLabel.textContent = "(muted)";
+      video.muted = true;
+    } else {
+      footerWatch.style.display = "none";
+      footerRec.style.display = "flex";
+      videoModeLabel.textContent = "(muted — your voice records over)";
+      video.muted = true;
+      showScene(sceneSelect.value);
+    }
+  });
+});
+
+// ────────────────────────────────────────────────────────────────────────
+// Watch-along mode
+// ────────────────────────────────────────────────────────────────────────
+const video = document.getElementById("preview");
+const playallBtn = document.getElementById("playall-btn");
+const playnowBtn = document.getElementById("playnow-btn");
+const pauseallBtn = document.getElementById("pauseall-btn");
+const restartBtn = document.getElementById("restart-btn");
+const progress = document.getElementById("progress");
+const statusEl = document.getElementById("status");
+const timeLabel = document.getElementById("time-label");
+const speedSlider = document.getElementById("speed");
+const speedVal = document.getElementById("speed-val");
+const countdownOverlay = document.getElementById("countdown");
+const countdownNum = document.getElementById("countdown-num");
+
+function applySpeed(rate) {
+  video.playbackRate = rate;
+  const totalAtRate = (video.duration || 99.77) / rate;
+  speedVal.textContent = `${rate.toFixed(2)}× · ${fmtTime(totalAtRate)}`;
+}
+speedSlider.addEventListener("input", () => applySpeed(parseFloat(speedSlider.value)));
+
+async function startPlayback({ countdown }) {
+  // Reset to start so each take begins from frame 0
+  video.currentTime = 0;
+  if (countdown) {
+    countdownOverlay.classList.add("show");
+    for (let i = 3; i > 0; i--) {
+      countdownNum.textContent = String(i);
+      await new Promise((r) => setTimeout(r, 1000));
+    }
+    countdownNum.textContent = "GO";
+    await new Promise((r) => setTimeout(r, 350));
+    countdownOverlay.classList.remove("show");
+  }
+  try {
+    applySpeed(parseFloat(speedSlider.value));
+    await video.play();
+    playallBtn.disabled = true; playnowBtn.disabled = true; pauseallBtn.disabled = false;
+    statusEl.textContent = "● recording"; statusEl.className = "recording";
+  } catch (e) {
+    alert("Playback failed: " + e.message);
+  }
+}
+
+playallBtn.addEventListener("click", () => startPlayback({ countdown: true }));
+playnowBtn.addEventListener("click", () => startPlayback({ countdown: false }));
+pauseallBtn.addEventListener("click", () => { video.pause(); playallBtn.disabled = false; playnowBtn.disabled = false; pauseallBtn.disabled = true; statusEl.textContent = "paused"; statusEl.className = ""; });
+restartBtn.addEventListener("click", () => { video.currentTime = 0; video.pause(); progress.style.width = "0%"; statusEl.textContent = "idle"; statusEl.className = ""; playallBtn.disabled = false; playnowBtn.disabled = false; pauseallBtn.disabled = true; });
+
+video.addEventListener("timeupdate", () => {
+  const t = video.currentTime;
+  const d = video.duration || SEGMENTS[SEGMENTS.length - 1].end;
+  progress.style.width = ((t / d) * 100).toFixed(1) + "%";
+  timeLabel.textContent = `${fmtTime(t)} / ${fmtTime(d)}`;
+  highlightActive(t);
+});
+video.addEventListener("ended", () => {
+  playallBtn.disabled = false; playnowBtn.disabled = false; pauseallBtn.disabled = true;
+  statusEl.textContent = "✓ done — stop your audio recording"; statusEl.className = "done";
+});
+
+// ────────────────────────────────────────────────────────────────────────
+// Per-scene record mode
+// ────────────────────────────────────────────────────────────────────────
+const startBtn = document.getElementById("start-btn");
+const stopBtn = document.getElementById("stop-btn");
+const recStatus = document.getElementById("rec-status");
+const progressRec = document.getElementById("progress-rec");
+const filesDiv = document.getElementById("files");
+const recordedSegs = new Set();
+
+let mediaRecorder = null, chunks = [], micStream = null, stopTimer = null, recProgressTimer = null;
+
+function updateFiles() {
+  filesDiv.innerHTML = "<strong>Recorded:</strong> " + SEGMENTS.filter(s => !s.silent)
+    .map(s => `<span class="file ${recordedSegs.has(s.id) ? "recorded" : ""}">seg${s.id}-voice.webm</span>`)
+    .join("");
+}
+
+function showScene(id) {
+  const s = SEGMENTS[id];
+  if (!s) return;
+  video.currentTime = s.start;
+  video.pause();
+  // also highlight
+  highlightActive(s.start + 0.01);
+}
+
+sceneSelect.addEventListener("change", () => showScene(+sceneSelect.value));
+
+async function getMic() {
+  if (micStream) return micStream;
+  try {
+    micStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, sampleRate: 44100 } });
+    return micStream;
+  } catch (e) { alert("Microphone access denied. Reload + grant permission."); throw e; }
+}
+
+async function startRecording() {
+  const id = +sceneSelect.value;
+  const s = SEGMENTS[id];
+  if (s.silent) {
+    alert("This segment is silent (title card / B-roll). Pick a scene with voiceover.");
+    return;
+  }
+  await getMic();
+  chunks = [];
+  mediaRecorder = new MediaRecorder(micStream, { mimeType: "audio/webm;codecs=opus" });
+  mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
+  mediaRecorder.onstop = () => {
+    const blob = new Blob(chunks, { type: "audio/webm" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = `seg${id}-voice.webm`; a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    recordedSegs.add(id); updateFiles();
+    recStatus.textContent = `✓ saved seg${id}-voice.webm`; recStatus.className = "done";
+    progressRec.style.width = "100%";
+    startBtn.disabled = false; stopBtn.disabled = true;
+  };
+  startBtn.disabled = true; stopBtn.disabled = false;
+  for (let i = 3; i > 0; i--) { recStatus.textContent = `recording in ${i}…`; await new Promise(r => setTimeout(r, 1000)); }
+  recStatus.textContent = "● RECORDING"; recStatus.className = "recording";
+  video.currentTime = s.start;
+  await video.play();
+  mediaRecorder.start();
+  const t0 = performance.now(); const dur = (s.end - s.start) * 1000;
+  recProgressTimer = setInterval(() => {
+    const elapsed = performance.now() - t0;
+    progressRec.style.width = Math.min(100, (elapsed / dur) * 100) + "%";
+    if (elapsed >= dur) clearInterval(recProgressTimer);
+  }, 50);
+  stopTimer = setTimeout(() => {
+    if (mediaRecorder && mediaRecorder.state === "recording") mediaRecorder.stop();
+    video.pause();
+  }, dur);
+}
+
+function stopEarly() {
+  if (stopTimer) clearTimeout(stopTimer);
+  if (recProgressTimer) clearInterval(recProgressTimer);
+  if (mediaRecorder && mediaRecorder.state === "recording") mediaRecorder.stop();
+  video.pause();
+  startBtn.disabled = false; stopBtn.disabled = true;
+}
+
+startBtn.addEventListener("click", startRecording);
+stopBtn.addEventListener("click", stopEarly);
+
+// ────────────────────────────────────────────────────────────────────────
+// Init
+// ────────────────────────────────────────────────────────────────────────
+renderSegments();
+updateFiles();
+video.addEventListener("loadedmetadata", () => {
+  timeLabel.textContent = `0:00.0 / ${fmtTime(video.duration)}`;
+  highlightActive(0);
+  applySpeed(parseFloat(speedSlider.value));
+});
+</script>
+</body>
+</html>

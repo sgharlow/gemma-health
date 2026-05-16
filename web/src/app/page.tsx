@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import WebcamCapture from "@/components/WebcamCapture";
+import IntakeQueue from "@/components/IntakeQueue";
 import LedgerView from "@/components/LedgerView";
 import EgressButton from "@/components/EgressButton";
 
@@ -16,29 +17,125 @@ interface HealthResponse {
   host: string;
 }
 
+interface LedgerEntry {
+  seq: number;
+  ts: string;
+  action: string;
+  phi_egress?: boolean;
+}
+
+interface LastBatchSummary {
+  ts: string;
+  jobs: number;
+  errors: number;
+}
+
+const CHAT_STORAGE_KEY = "hpe.chat.v1";
+
+function formatBatchTs(iso: string): string {
+  try {
+    const d = new Date(iso);
+    const date = d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+    const time = d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", hour12: false });
+    return `${date} ${time}`;
+  } catch {
+    return iso;
+  }
+}
+
 export default function Home() {
   const [health, setHealth] = useState<HealthResponse | null>(null);
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [ledgerTick, setLedgerTick] = useState(0);
+  // Stable initial value avoids a server/client hydration mismatch when
+  // navigator.onLine differs at hydration time. The active probe in useEffect
+  // (runs only on the client, post-mount) verifies real network state within ~3s.
   const [networkOnline, setNetworkOnline] = useState(true);
+  // Gated render: the banner stays hidden until the first probe completes.
+  // Without this, the demo briefly flashes "ONLINE" before the probe flips it
+  // to OFFLINE — that flash gets captured in the recording's cold open.
+  const [probeReady, setProbeReady] = useState(false);
   const [sovereigntyEnabled, setSovereigntyEnabled] = useState(true);
+  const [lastBatch, setLastBatch] = useState<LastBatchSummary | null>(null);
 
   useEffect(() => {
     fetch("/api/health").then((r) => r.json()).then(setHealth).catch(() => setHealth(null));
+    if (typeof window !== "undefined") {
+      try {
+        const raw = window.localStorage.getItem(CHAT_STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw) as Msg[];
+          if (Array.isArray(parsed)) setMessages(parsed);
+        }
+      } catch {
+        // ignore corrupt storage; chat will start empty
+      }
+    }
     if (typeof navigator !== "undefined") {
-      setNetworkOnline(navigator.onLine);
-      const on = () => setNetworkOnline(true);
+      // navigator.onLine alone is unreliable on macOS — it stays true when only
+      // Wi-Fi is cut because the OS still sees loopback as a "network". For the
+      // demo's OFFLINE story to be visually true, we ALSO probe a non-local
+      // host every few seconds. If the probe fails, we're really offline.
+      const probe = async (signal: AbortSignal): Promise<boolean> => {
+        try {
+          await fetch("https://1.1.1.1/cdn-cgi/trace", {
+            mode: "no-cors",
+            cache: "no-store",
+            signal,
+          });
+          return true;
+        } catch {
+          return false;
+        }
+      };
+      const cycle = async () => {
+        const c = new AbortController();
+        const t = setTimeout(() => c.abort(), 2000);
+        const online = (typeof navigator !== "undefined" && navigator.onLine) && (await probe(c.signal));
+        clearTimeout(t);
+        setNetworkOnline(online);
+        setProbeReady(true);
+      };
+      cycle();
+      const interval = window.setInterval(cycle, 3000);
+      const on = () => cycle();
       const off = () => setNetworkOnline(false);
       window.addEventListener("online", on);
       window.addEventListener("offline", off);
       return () => {
+        window.clearInterval(interval);
         window.removeEventListener("online", on);
         window.removeEventListener("offline", off);
       };
     }
   }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(messages));
+    } catch {
+      // localStorage may be unavailable in some incognito modes; chat still works in-session
+    }
+  }, [messages]);
+
+  useEffect(() => {
+    // Pull last-batch summary from ledger. Re-runs whenever ledgerTick increments
+    // (i.e. after any successful chat/vision/egress that mutates the ledger).
+    fetch("/api/ledger?limit=200")
+      .then((r) => r.json())
+      .then((d: { count: number; entries: LedgerEntry[] }) => {
+        if (!d.entries?.length) {
+          setLastBatch(null);
+          return;
+        }
+        const lastTs = d.entries[d.entries.length - 1]?.ts ?? d.entries[0].ts;
+        setLastBatch({ ts: lastTs, jobs: d.count, errors: 0 });
+      })
+      .catch(() => setLastBatch(null));
+  }, [ledgerTick]);
 
   async function send() {
     if (!input.trim() || busy) return;
@@ -70,23 +167,46 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
       <header className="border-b border-zinc-200 dark:border-zinc-800">
+        {/* Banner is hidden until the first probe completes — eliminates the
+            momentary "ONLINE" flash a recording would otherwise capture in the
+            cold open. We reserve the exact same vertical space with a neutral
+            slate row so the rest of the layout doesn't shift when the banner
+            paints in. */}
         <div
           role="status"
           aria-live="polite"
-          className={`flex items-center gap-2 px-4 py-2 text-xs font-medium tracking-wide ${
-            offline ? "bg-emerald-600 text-white" : "bg-amber-500 text-zinc-900"
+          className={`flex items-center gap-2 px-4 py-2 text-xs font-medium tracking-wide transition-colors duration-200 ${
+            !probeReady
+              ? "bg-zinc-200 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-500"
+              : offline
+                ? "bg-emerald-600 text-white"
+                : "bg-amber-500 text-zinc-900"
           }`}
         >
-          <span aria-hidden="true">{offline ? "✓" : "●"}</span>
+          <span aria-hidden="true">{!probeReady ? "•" : offline ? "✓" : "●"}</span>
           <span>
-            {offline
-              ? "OFFLINE — Gemma 4 running locally · No data leaves this device"
-              : "ONLINE — toggle airplane mode to verify on-device inference"}
+            {!probeReady
+              ? "checking network…"
+              : offline
+                ? "OFFLINE — Gemma 4 running locally · No data leaves this device"
+                : "ONLINE — toggle airplane mode to verify on-device inference"}
             {health?.model ? ` · model: ${health.model}` : ""}
           </span>
         </div>
         <div className="flex flex-wrap items-baseline justify-between gap-3 px-6 py-4">
-          <h1 className="text-xl font-semibold">HealthPulse Edge</h1>
+          <div className="flex items-baseline gap-3">
+            <h1 className="text-xl font-semibold">HealthPulse Edge</h1>
+            {lastBatch && (
+              <span
+                title="Most recent on-device batch run — see Compliance Ledger below"
+                className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300 bg-emerald-50 px-2.5 py-1 text-[11px] font-medium text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-200"
+              >
+                <span aria-hidden="true">●</span>
+                Morning Report — last batch {formatBatchTs(lastBatch.ts)} · {lastBatch.jobs}{" "}
+                {lastBatch.jobs === 1 ? "job" : "jobs"} · {lastBatch.errors} errors
+              </span>
+            )}
+          </div>
           <div className="flex items-center gap-4">
             <label className="flex cursor-pointer items-center gap-2 text-xs">
               <input
@@ -212,6 +332,8 @@ export default function Home() {
             </button>
           </form>
         </section>
+
+        <IntakeQueue />
 
         <WebcamCapture onCapture={() => setLedgerTick((t) => t + 1)} />
 

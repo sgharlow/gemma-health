@@ -1,0 +1,81 @@
+{
+  "generated_at": "2026-05-16T05:18:56.279Z",
+  "batch_started_at": "2026-04-21T22:17:00Z",
+  "batch_finished_at": "2026-04-22T05:42:00Z",
+  "job_count": 9,
+  "error_count": 0,
+  "featured": {
+    "filename": "sample-survey.png",
+    "extraction": {
+      "patient_initials": "MY",
+      "visit_date": "2026-04-22",
+      "free_text_feedback": "Nurse Marlene was very kind. Wait was long but care was good."
+    }
+  },
+  "rows": [
+    {
+      "initials": "A.B.",
+      "visit_date": "2026-04-21",
+      "overall": 5,
+      "comm": 5,
+      "clean": 5,
+      "theme": "\"Quick triage, doctor explained everything.\""
+    },
+    {
+      "initials": "T.W.",
+      "visit_date": "2026-04-21",
+      "overall": 3,
+      "comm": 3,
+      "clean": 4,
+      "theme": "\"Long wait in ED. Care was OK once seen.\""
+    },
+    {
+      "initials": "R.N.",
+      "visit_date": "2026-04-20",
+      "overall": 4,
+      "comm": 4,
+      "clean": 4,
+      "theme": "\"Discharge instructions were clear.\""
+    },
+    {
+      "initials": "S.B.",
+      "visit_date": "2026-04-20",
+      "overall": 5,
+      "comm": 5,
+      "clean": 4,
+      "theme": "\"Nurses were wonderful. Felt heard.\""
+    },
+    {
+      "initials": "J.C.",
+      "visit_date": "2026-04-19",
+      "overall": 4,
+      "comm": 4,
+      "clean": 5,
+      "theme": "\"Pain management improved by day two.\""
+    },
+    {
+      "initials": "E.T.",
+      "visit_date": "2026-04-19",
+      "overall": 5,
+      "comm": 5,
+      "clean": 5,
+      "theme": "\"Bilingual staff helped my grandmother.\""
+    },
+    {
+      "initials": "K.M.",
+      "visit_date": "2026-04-18",
+      "overall": 3,
+      "comm": 4,
+      "clean": 3,
+      "theme": "\"Room was cold. Care otherwise fine.\""
+    },
+    {
+      "initials": "L.Y.",
+      "visit_date": "2026-04-18",
+      "overall": 4,
+      "comm": 4,
+      "clean": 4,
+      "theme": "\"Lab results back same day. Appreciated.\""
+    }
+  ]
+}
