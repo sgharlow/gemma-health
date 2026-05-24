@@ -515,7 +515,11 @@ git add assets/cover.png && git commit -m "Day 8: cover image snapshot"
 
 ---
 
-## What's left for Steve (the irreversible Day 8 work)
+## Submission Status
+
+> SUBMITTED 2026-05-17 to Kaggle Gemma 4 Good Hackathon ($200K pool). Deadline was 2026-05-18 23:59 UTC (now passed). The "What's left for Steve" section below is historical — all listed tasks were completed before submission. Awaiting Kaggle results.
+
+## What's left for Steve (the irreversible Day 8 work) — HISTORICAL / DONE
 
 In order:
 

@@ -1,5 +1,7 @@
 # Final-Submit Checklist (Day 8 / 2026-05-18)
 
+> COMPLETED — submitted to Kaggle 2026-05-17 (deadline 2026-05-18 passed). Historical pre-submission checklist.
+
 Print this. Walk through it on the Mac in order. Do not skip.
 
 > **Status (as of 2026-05-11):** You have already joined the hackathon and accepted the rules. Kaggle says you have an in-progress draft (URL reserved). NOTE.md = "Welcome! This is a Hackathon with no provided dataset." (no further instructions).

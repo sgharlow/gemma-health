@@ -174,6 +174,8 @@ The prize-fund allocation described in WRITEUP.md ("6-month pilot at one opted-i
 
 # Part II — Winning Enhancements (One-Week Sprint)
 
+> STATUS: NOT EXECUTED before submission. The sprint target of 2026-05-17 was not met — the last commit before submission was 2026-05-16 (LinkedIn posts). None of W1-W5 shipped. These are deferred post-hackathon enhancements; pursue or close depending on Kaggle results and pilot interest.
+
 > These five enhancements are chosen specifically to move the needle with judges, not just improve the codebase. The scoring breakdown is: Video Pitch & Storytelling (30%), Technical Implementation (25%), Impact & Relevance (25%), Innovation & Creativity (20%). The current submission is strong on Technical Implementation and Innovation. These enhancements target the gaps in demonstrability, impact evidence, and storytelling completeness that separate a strong submission from a winning one.
 >
 > All five are completable within one week. Each is scoped to be self-contained — they don't depend on each other and can be parallelized.
@@ -378,4 +380,4 @@ Together, they address all four scoring dimensions: W1 → Impact & Relevance, W
 
 ---
 
-*Winning enhancements added: 2026-05-12 · Sprint target: complete by 2026-05-17 · Submit: 2026-05-18*
+*Winning enhancements added: 2026-05-12 · Sprint target: complete by 2026-05-17 (NOT MET — none shipped) · Submitted as-is: 2026-05-17 · Deadline: 2026-05-18 (passed) · Status: deferred post-hackathon*

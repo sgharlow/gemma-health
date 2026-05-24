@@ -50,7 +50,7 @@ ollama pull gemma4:e2b
 git clone https://github.com/sgharlow/gemma-health
 cd gemma-health/web
 npm install
-npm run test          # 49/49
+npm run test          # 58/58
 npm run dev           # http://localhost:3000
 ```
 
